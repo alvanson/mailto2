@@ -5,8 +5,8 @@ PREFIX = /usr/machine/etc/httpd
 
 BINDIR = $(PREFIX)/cgi-bin
 
-SOURCES = mailto.c util.c
-OBJECTS = mailto.o util.o
+SOURCES = mailto.c
+OBJECTS = mailto.o
 TARGETS = mailto
 
 INSTALL = bsdinst
@@ -33,4 +33,3 @@ check:
 
 depend:
 	makedepend -- $(CFLAGS) $(COPTS) -- $(SOURCES)
-

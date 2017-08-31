@@ -21,10 +21,6 @@ Also, if you find this useful and want to install it at your Web site,
 send me a notification - I want to see if there's public interest in
 these tools; if it's worth to officially release and support them.
 
-util.c has been stolen from NCSA's CGI-Scripts distribution.
-wildmat.c has been stolen from Rich Salz' INN library.
-get_tcp_conn.h has been stolen from nntp.1.5.11 (?)
-
 mailto		WWW Mail Gateway, replaces mailto: links since they don't work
 		in every browser. Has a configuration file for 'allowed'
 		mail addresses.
@@ -33,7 +29,7 @@ mailto		WWW Mail Gateway, replaces mailto: links since they don't work
 Bye, Andy
 
 -------------------------------------------------------------------------------
-   Andreas Ley       !  "Even when you're   !  Email: ley@rz.uni-karlsruhe.de 
+   Andreas Ley       !  "Even when you're   !  Email: ley@rz.uni-karlsruhe.de
    Nelkenstr. 9      !   a genius, life is  !  Voice: +49 721 84 10 36
    76135 Karlsruhe   !   a mystery!"        !  RZ:    +49 721 608 4038
    Germany           !  Doogie Howser, M.D. !  AKK:   +49 721 96 403 22

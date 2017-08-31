@@ -66,14 +66,9 @@ extern char	*sys_errlist[];
 #define	FALSE	0		/* This is the naked Truth */
 #define	TRUE	1		/* and this is the Light */
 
-/* Functions from util.c */
-
-char *makeword(char *line, char stop);
-char *fmakeword(FILE *f, char stop, int *len);
-void unescape_url(char *url);
-void plustospace(char *str);
-
 /* Global variables */
+
+#define BUFSIZE 8192
 
 char	master[]=MASTER;
 char mailname[256];
@@ -512,13 +507,86 @@ void getmailname(char *name, size_t len)
 }
 
 
+/* extract tokens from streams */
+char *fntok_r(FILE *f, const char *delim, size_t *n)
+{
+    size_t len, i;
+    char *token;
+    char c;
+
+    len = BUFSIZE, i = 0;
+    token = malloc(len);
+
+    while (*n > 0 && !feof(f)) {
+        /* read next character */
+        c = (char)fgetc(f);
+        (*n)--;
+        /* look for c in delimiters */
+        if (strchr(delim, c)) {
+            /* terminate and return token */
+            token[i] = '\0';
+            return token;
+        } else {
+            /* append character to current token */
+            token[i] = c;
+        }
+        i++;
+        /* resize token buffer if necessary */
+        if (i >= len-1) {
+            len += BUFSIZE;
+            token[i] = '\0';
+            token = realloc(token, len);
+        }
+    }
+
+    token[i] = '\0';
+    /* if no token remains, return NULL */
+    if (*token == '\0') {
+        free(token);
+        token = NULL;
+    }
+    return token;
+}
+
+
+char x2c(char *x) {
+    char c;
+
+    c = (x[0] >= 'A' ? ((x[0] & 0xdf) - 'A') + 10 : (x[0] - '0'));
+    c *= 16;
+    c += (x[1] >= 'A' ? ((x[1] & 0xdf) - 'A') + 10 : (x[1] - '0'));
+
+    return c;
+}
+
+
+void urldecode(char *url) {
+    size_t i;   /* current index of input */
+    size_t j;   /* current index of output, j <= i */
+
+    for (i=0, j=0; url[i]; i++, j++) {
+        if (url[i] == '+') {
+            url[j] = ' ';
+        } else if (url[i] == '%') {
+            url[j] = x2c(&url[i+1]);
+            i += 2;
+        } else {
+            url[j] = url[i];
+        }
+    }
+    url[j] = '\0';
+}
+
+
 int main(int argc, char *argv[])
 {
 	int	c;
 	char	*ptr,*nptr;
 	char	*address,*fulladdress,*from,*cc,*bcc,*subject,*location;
 	char	*tag,*val;
-	int	cl,cnt,copyself;
+    size_t cl;
+    char *saveptr;
+	int	cnt,copyself;
 
 	while ((c=getopt(argc,argv,"Dvh?")) != EOF)
 		switch ((char)c) {
@@ -573,15 +641,13 @@ int main(int argc, char *argv[])
         if (cl <= 0) {
             show_fatal(ERROR_CONTENT_LENGTH);
         }
-		max=0;
-		while (cl&&(!feof(stdin))) {
-			val=fmakeword(stdin,'&',&cl);
-			plustospace(val);
-			unescape_url(val);
-			tag=secure(makeword(val,'='));
-#ifdef FLEMMING
-			if (*val) {
-#endif
+        max = 0;
+        while ((val = fntok_r(stdin, "&", &cl))) {
+            if (*val) {
+                urldecode(val);
+                tag = secure(strtok_r(val, "=", &saveptr));
+                val = strtok_r(NULL, "=", &saveptr);
+                if (val) {
 				if (!strcmp(tag,"To")) {
 					if (*secure(val))
 						address=val;
@@ -612,9 +678,8 @@ int main(int argc, char *argv[])
 						max++;
 					}
 				}
-#ifdef FLEMMING
 			}
-#endif
+            }
 		}
 
 		if (address&&(ptr=strchr(address,' ')))
