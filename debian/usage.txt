@@ -37,8 +37,8 @@
        this parameter by an INPUT with NAME= "To"
        which may also be of TYPE=hidden.
        This INPUT will be treated special, as will
-       be NAME="From" (NAME="Reply-To" provides the same functionality but
-       is obsolete and it's use is discouraged) and NAME="Copy-Self". They
+       be NAME="From".
+       They
        all have precedence over the URL parameters. Use of the INPUT is
        recommended.
        When the FORM is submitted, the <address> (or the VALUE of the
@@ -49,9 +49,6 @@
        "<name>: <content><LF>" for one-line-contents and as
        "<name>:<LF><content><LF><content><LF>.<LF>" for multi-line-contents
        with leading periods preceeded by another period.
-       If an INPUT with TYPE="checkbox" and NAME="Copy-Self" has been checked,
-       a copy of the message will be sent to the originator of the message
-       as specified in the NAME="From" (or NAME="Reply-To") field.
        If a field with NAME="Acknowledge" was specified, it will
        be sent back as a confirmation to the sender.
 
@@ -61,10 +58,9 @@
 A common example would look like
 
        <form action="/cgi-bin/mailto/address" method=post>
-       E-Mail    : <input name="Reply-To" size=44><p>
+       E-Mail    : <input name="From" size=44><p>
        Copy      : <input name="Cc" size=44><p>
        Blind Copy: <input name="Bcc" size=44><p>
-       Self Copy : <input name="Copy-Self" size=44><p>
        Hotlink   : <input name="URL" size=55><br>
 
        <input type=hidden name="Acknowledge" value="/special/mailto-answer.html">
@@ -84,8 +80,7 @@ delivering the resulting mail.
 
   Acknowledge		Web page for redirection on success
   Subject		Subject of the sent  mail
-  Reply-To | From	Submitter address, will be used as From: line
+  From          Submitter address, will be used as From: line
   Cc			Send a copy to, visible in the header
   Bcc			Send a copy to, invisible in the header
-  Copy-Self		Send a blind copy to the submitter
   To			Receipient of the mail, should be submitted as .../address

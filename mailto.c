@@ -367,7 +367,7 @@ char *encoding()
 
 
 /* Actually send mail to recipient */
-void mailto(char *address, char *fulladdress, char *cc, char *bcc, char *subject, char *from, int copyself)
+void mailto(char *address, char *fulladdress, char *cc, char *bcc, char *subject, char *from)
 {
 	char	buffer[1024],error[2048],*ptr,*nptr;
 	int	cnt,retval;
@@ -375,7 +375,7 @@ void mailto(char *address, char *fulladdress, char *cc, char *bcc, char *subject
 	char	*enc;
 
 	if (debug)
-		(void)fprintf(stderr,"mailto(\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",%d)\n",address,fulladdress,cc,bcc,subject,from,copyself);
+		(void)fprintf(stderr,"mailto(\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\")\n",address,fulladdress,cc,bcc,subject,from);
 #ifdef SENDMAIL_SMTP
 	strcpy(buffer,MAILCMD);
 	if ((dest=popen(buffer,"w"))) {
@@ -386,8 +386,6 @@ void mailto(char *address, char *fulladdress, char *cc, char *bcc, char *subject
 			(void)fprintf(dest,"RCPT TO:<%s>\r\n",cc);
 		if (bcc)
 			(void)fprintf(dest,"RCPT TO:<%s>\r\n",bcc);
-		if (copyself)
-			(void)fprintf(dest,"RCPT TO:<%s>\r\n",from);
 		(void)fprintf(dest,"DATA\r\n");
 		(void)fprintf(dest,"From: %s\r\n",from);
 		(void)fprintf(dest,"Subject: %s\r\n",subject);
@@ -586,7 +584,7 @@ int main(int argc, char *argv[])
 	char	*tag,*val;
     size_t cl;
     char *saveptr;
-	int	cnt,copyself;
+	int	cnt;
 
 	while ((c=getopt(argc,argv,"Dvh?")) != EOF)
 		switch ((char)c) {
@@ -608,7 +606,6 @@ int main(int argc, char *argv[])
 	from="not-for-mail";
 	cc=NULL;
 	bcc=NULL;
-	copyself=FALSE;
 
     getmailname(mailname, sizeof(mailname));
     if (debug)
@@ -648,39 +645,28 @@ int main(int argc, char *argv[])
                 tag = secure(strtok_r(val, "=", &saveptr));
                 val = strtok_r(NULL, "=", &saveptr);
                 if (val) {
-				if (!strcmp(tag,"To")) {
-					if (*secure(val))
-						address=val;
-				} else if (!strcmp(tag,"Subject")) {
-					if (*secure(val)) {
-						subject=val;
-						if (debug)
-							(void)fprintf(stderr,"subject=\"%s\"\n",subject);
-					}
-				} else if (!strcmp(tag,"From")||!strcmp(tag,"Reply-To")) {
-					if (*secure(val))
-						from=val;
-				} else if (!strcmp(tag,"Cc")) {
-					if (*secure(val))
-						cc=val;
-				} else if (!strcmp(tag,"Bcc")) {
-					if (*secure(val))
-						bcc=val;
-				} else if (!strcmp(tag,"Copy-Self")) {
-					copyself=TRUE;
-				} else if (!strcmp(tag,"Acknowledge")) {
-					if (*secure(val))
-						location=val;
-				} else {
-					if (*stripcr(val)) {
-						htag[max]=tag;
-						hval[max]=val;
-						max++;
-					}
-				}
-			}
+                    if (strcmp(tag, "To") == 0) {
+                        address = secure(val);
+                    } else if (strcmp(tag, "Subject") == 0) {
+                        subject = secure(val);
+                        if (debug)
+                            fprintf(stderr, "subject=\"%s\"\n", subject);
+                    } else if (strcmp(tag, "From") == 0) {
+                        from = secure(val);
+                    } else if (strcmp(tag, "Cc") == 0) {
+                        cc = secure(val);
+                    } else if (strcmp(tag, "Bcc") == 0) {
+                        bcc = secure(val);
+                    } else if (strcmp(tag, "Acknowledge") == 0) {
+                        location = secure(val);
+                    } else {
+                        htag[max] = tag;
+                        hval[max] = stripcr(val);
+                        max++;
+                    }
+                }
             }
-		}
+        }
 
 		if (address&&(ptr=strchr(address,' ')))
 			*ptr='\0';
@@ -688,10 +674,6 @@ int main(int argc, char *argv[])
 		/* Test for required values */
 		if (!address||!subject)
 			show_error(ERROR_ADDRESS);
-
-		/* Self copy needs email address */
-		if (!strcmp(from,"not-for-mail"))
-			copyself=FALSE;
 
 		/* Add pid to subject */
 		if (strstr(subject,"%d")) {
@@ -708,23 +690,15 @@ int main(int argc, char *argv[])
 
 		/* Send mail */
 		fulladdress=checkaccess(address,TRUE);
-		mailto(address,fulladdress,cc,bcc,subject,from,copyself);
+		mailto(address,fulladdress,cc,bcc,subject,from);
 
 		/* Drop the user a message */
 		if (location)
 			show_location(location);
 		else {
 			show_header(SUCCESS_HEADER,NULL);
-			if (copyself||cc||bcc) {
+			if (cc||bcc) {
 				(void)printf(SUCCESS_SENT,fulladdress);
-				if (copyself) {
-					if (cc)
-						(void)printf(SUCCESS_ALSO,checkaccess(cc,FALSE));
-					if (bcc)
-						(void)printf(SUCCESS_ALSO,checkaccess(bcc,FALSE));
-					(void)printf(SUCCESS_COPY,checkaccess(from,FALSE));
-				}
-				else
 					if (bcc) {
 						if (cc)
 							(void)printf(SUCCESS_ALSO,checkaccess(cc,FALSE));
