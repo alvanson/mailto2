@@ -1,0 +1,89 @@
+ A WWW FORMs to Mail gateway
+
+ Copyright (c) 10.6.94 by Andreas Ley <ley@rz.uni-karlsruhe.de>
+
+ Permission to use, copy, modify, and distribute this software for any
+ purpose and without fee is hereby granted, provided that the above
+ copyright notice appears in all copies. This software is provided "as is"
+ and without any express or implied warranties.
+
+ Usage:
+
+     - Since WWW is anonymous, mail sent through the WWW Mail Gateway
+       is anonymous, too. Some people don't like to get anonymous mail,
+       that's why mailto can be used with an access configuration file,
+       which specifies who is enabled to get mail through the WWW Mail
+       Gateway. If you don't need access control, just undefine ADDRESSES,
+       otherwise point it to a configuration file with entries:
+	       <address> (<realname>)
+       <realname> is optional.
+
+     - Calling /cgi-bin/mailto/<address>/<subject>/<url> gives you a template
+       mail FORM. <address> is the recipients email address, <subject> is
+       a predefined subject and <url> is the URL of an acknowledgement page.
+       Any of the parameters may be skipped; since address and subject
+       are required, mailto will generate input fields if they're
+       missing.
+
+       You may also call it from within a simple shell and you'll get
+       an example as well.
+
+     - Create your own customized/beautified FORM with METHOD=POST and
+       ACTION=/cgi-bin/mailto/<address>/<subject>/<url>. As above, <address>
+       is the recipients email address, <subject> is a predefined subject and
+       <url> is the URL of an acknowledgement page. You can replace any of
+       these parameters by INPUTs with NAME= "To", "Subject" or "Acknowledge"
+       respectivly, which may also be of TYPE=hidden (recommended for the
+       acknowledgement URL). These INPUTs will be treated special, as will
+       be NAME="From" (NAME="Reply-To" provides the same functionality but
+       is obsolete and it's use is discouraged) and NAME="Copy-Self". They
+       all have precedence over the URL parameters. Use of the INPUTs is
+       recommended.
+       When the FORM is submitted, the <address> (or the VALUE of the
+       NAME="To" field) will be checked against the configuration file, the
+       contents will be converted into a mail message and the message will be
+       sent to <address> (<realname>) with <subject> (or the VALUE of the
+       NAME="Subject" field) as the subject. Input fields will be listed as
+       "<name>: <content><LF>" for one-line-contents and as
+       "<name>:<LF><content><LF><content><LF>.<LF>" for multi-line-contents
+       with leading periods preceeded by another period.
+       If an INPUT with TYPE="checkbox" and NAME="Copy-Self" has been checked,
+       a copy of the message will be sent to the originator of the message
+       as specified in the NAME="From" (or NAME="Reply-To") field.
+       If <url> (or a field with NAME="Acknowledge") was specified, it will
+       be sent back as a confirmation to the sender.
+
+     - Only addresses that are listed in /etc/mailto.conf are valid
+       and will be delivered.
+
+A common example would look like
+
+       <form action="/cgi-bin/mailto/address" method=post>
+       E-Mail    : <input name="Reply-To" size=44><p>
+       Copy      : <input name="Cc" size=44><p>
+       Blind Copy: <input name="Bcc" size=44><p>
+       Self Copy : <input name="Copy-Self" size=44><p>
+       Hotlink   : <input name="URL" size=55><br>
+
+       <input type=hidden name="Acknowledge" value="/special/mailto-answer.html">
+       <input type=hidden name="Subject" value="Test the mailto">
+
+       <input type=submit value="Submit"> . <input type=reset value="Reset">
+       </form>
+
+Special variables
+-----------------
+
+The following variables have a special meaning when they are part of
+the form data which is sent to the web server and eventually to the
+CGI program mailto.  The field names are case sensitive.  They won't
+end up in the mail body but will be used for constructing and
+delivering the resulting mail.
+
+  Acknowledge		Web page for redirection on success
+  Subject		Subject of the sent  mail
+  Reply-To | From	Submitter address, will be used as From: line
+  Cc			Send a copy to, visible in the header
+  Bcc			Send a copy to, invisible in the header
+  Copy-Self		Send a blind copy to the submitter
+  To			Receipient of the mail, should be submitted as .../address

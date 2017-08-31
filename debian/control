@@ -1,0 +1,15 @@
+Source: mailto
+Section: web
+Priority: optional
+Maintainer: Martin Schulze <joey@debian.org>
+Standards-Version: 3.6.1
+
+Package: mailto
+Architecture: any
+Section: web
+Priority: optional
+Depends: apache | httpd, exim4 | mail-transport-agent, ${shlibs:Depends}
+Description: WWW Forms to Mail Gateway
+ This package provides a CGI program that converts data submitted
+ via a <forms> web formular to simple mail which is sent to a given
+ address.

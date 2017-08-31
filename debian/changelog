@@ -1,0 +1,130 @@
+mailto (1.3.2-3) unstable; urgency=low
+
+  * Disable included version of getline() since it is unused and produce
+    an FTBFS (closes: Bug#551449)
+  * Don't use '0' flag used with '%p' gnu_printf format [mailto.c]
+
+ -- Joey Schulze <joey@infodrom.org>  Sat, 16 Jan 2010 20:27:45 +0100
+
+mailto (1.3.2-2) unstable; urgency=low
+
+  * Fixed typo in NMU-Disclaimer, thanks to Petter Reinholdtsen (See:
+    Bug#225895)
+  * Extract the local mail hostname from /etc/mailname (closes:
+    Bug#415134)
+  * Fixed two compiler warnings
+
+ -- Martin Schulze <joey@infodrom.org>  Sat, 17 Mar 2007 12:55:10 +0100
+
+mailto (1.3.2-1) unstable; urgency=low
+
+  * New upstream version
+  * This refers to the final upstream version since upstream has abandoned
+    this package long ago.  Only Debian seems to distribute and maintain it
+  * Added support for special mail headers required when delivering mail
+    with non-ascii character encoding
+
+ -- Martin Schulze <joey@infodrom.org>  Sun, 12 Dec 2004 14:06:33 +0100
+
+mailto (1.3.1-1) unstable; urgency=low
+
+  * New upstream version
+  * Adjusted native report on Cc
+  * Added section about special variables for better documentation
+  * Added missing \r for the smtp protocol
+  * Added a note to the entire GPL to debian/copyright
+  * Removed the prerm since the /usr/share/doc conversion is done already
+  * Bumped the standards version
+
+ -- Martin Schulze <joey@infodrom.org>  Sat, 11 Dec 2004 18:06:17 +0100
+
+mailto (1.3-1) unstable; urgency=low
+
+  * New upstream version
+  * New license: GNU GPLv2
+  * Added support for new upstream Makefile
+  * Updated debian/copyright file according to upstream copyright
+  * Added documentation for carbon copy (Cc)
+  * Better note webmaster@ as address to send errors to
+
+ -- Martin Schulze <joey@infodrom.org>  Thu,  9 Dec 2004 09:53:31 +0100
+
+mailto (1.2.7-1) unstable; urgency=low
+
+  * New upstream version
+  * Fixed format string vulnerability
+
+ -- Martin Schulze <joey@infodrom.org>  Wed,  8 Dec 2004 21:16:14 +0100
+
+mailto (1.2.6-5) unstable; urgency=low
+
+  * Added a disclaimer for those people who plan to NMU this package
+  * Adjusted dependency to exim4 since it's the default MTA already
+    (closes: Bug#228582)
+  * Improved description
+  * Updated copyright file
+  * Cleaned up some code in mailto.c
+  * Wrote and added a small test program
+  * Added an UTF-8 detection rules so that valid UTF-8 characters won't be
+    eaten anymore
+  * No need for the postinst anymore since /usr/doc is gone
+
+ -- Martin Schulze <joey@infodrom.org>  Sat,  4 Dec 2004 10:13:01 +0100
+
+mailto (1.2.6-4) unstable; urgency=medium
+
+  * Finally fixed the redirection problem that mailto had. (closes:
+    Bug#79570, Bug#71090)
+  * Added bilingual message for HTTP relocation
+  * Applied NMU patches from Marcelo (closes: Bug#93958, Bug#93956)
+  * Applied patch from Ryan Hayle <ryan@savvynet.com> to send CRLF in the
+    SMTP dialog instead of just LF (closes: Bug#68790)
+  * Corrected some German messages (not that they were used in the Debian
+    version... I guess I became upstream of this package, not sure though)
+  * Added information about potential mail lossage when the pipe to
+    sendmail is closed which caused an error (potential fix for Bug#54309)
+
+ -- Martin Schulze <joey@finlandia.infodrom.north.de>  Fri, 10 Aug 2001 23:50:01 +0200
+
+mailto (1.2.6-3.2) unstable; urgency=low
+
+  * NMU
+  * debian/rules Duh! Fixed check for nostrip.
+  * debian/control: added | apache to Depends
+  * debian/control: added section and priority to binary package
+
+ -- Marcelo E. Magallon <mmagallo@debian.org>  Sat, 14 Apr 2001 12:25:12 +0200
+
+mailto (1.2.6-3.1) unstable; urgency=low
+
+  * NMU
+  * Moved doc and man to /usr/share (closes: bug#91574)
+  * debian/prerm, debian/postinst, debian/rules: added first two, install them
+  * debian/control: Standards-Version: 3.5.2
+
+ -- Marcelo E. Magallon <mmagallo@debian.org>  Sat, 14 Apr 2001 12:14:09 +0200
+
+mailto (1.2.6-3) unstable; urgency=low, closes=53997
+
+  * Don't use strip for non-strippable files (closes: Bug#53997)
+
+ -- Martin Schulze <joey@finlandia.infodrom.north.de>  Tue,  4 Jan 2000 11:27:44 +0100
+
+mailto (1.2.6-2) unstable; urgency=low, closes=37927
+
+  * Removed case-sensitivity of email addresses (closes: Bug#37927)
+
+ -- Martin Schulze <joey@finlandia.infodrom.north.de>  Tue, 26 Oct 1999 18:03:07 +0200
+
+mailto (1.2.6-1) unstable; urgency=low
+
+  * Initial release
+  * Extracted changelog
+  * Extracted usage
+  * Added readme
+  * Support for SENDER/MASTER@`hostname -f`
+  * Support for appropriate Redirect
+  * Added example
+
+ -- Martin Schulze <joey@finlandia.infodrom.north.de>  Tue, 29 Sep 1998 03:26:43 +0200
+
