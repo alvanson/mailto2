@@ -546,37 +546,19 @@ int main(int argc, char *argv[])
     if (debug)
         fprintf(stderr, "mailname=\"%s\"\n", mailname);
 
-	ptr=getenv("PATH_INFO");
-	if (debug)
-		(void)fprintf(stderr,"PATH_INFO=\"%s\"\n",ptr);
-	if (ptr) {
-		if (*ptr=='/')
-			ptr++;
-		if (*ptr) {
-			address=ptr;
-			if ((subject=strchr(address,'/'))) {
-				*subject++='\0';
-				if ((location=strchr(subject,'/'))) {
-					*location++='\0';
-					if ((ptr=strchr(location,':'))&&ptr[1]=='/') {
-						if (ptr[2]!='/') {
-							nptr=malloc(strlen(location)+2);
-							(void)strncpy(nptr,location,(size_t)(ptr-location)+2);
-							(void)strcpy(nptr+(ptr-location)+2,ptr+1);
-							location=nptr;
-						} else if (ptr[3]=='/')
-							(void)strcpy(ptr+2,ptr+3);
-					}
-				}
-			}
-		}
-		if (address&&!*secure(address))
-			address=NULL;
-		if (subject&&!*secure(subject))
-			subject=NULL;
-		if (location&&!*secure(location))
-			location=NULL;
-	}
+    /* extract recipient address from URL */
+    ptr = getenv("PATH_INFO");
+    if (debug)
+        fprintf(stderr, "PATH_INFO=\"%s\"\n", ptr);
+    if (ptr) {
+        /* skip leading slash */
+        if (*ptr == '/') {
+            ptr++;
+        }
+        address = secure(ptr);
+        if (debug)
+            fprintf(stderr, "address=\"%s\"\n", address);
+    }
 
 	/* In case we get a GET request, spit out a minimal mail form */
 	ptr=getenv("REQUEST_METHOD");

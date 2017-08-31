@@ -30,39 +30,38 @@
 	       <address> (<realname>)
        <realname> is optional.
 
-     - Calling /cgi-bin/mailto/<address>/<subject>/<url> gives you a template
-       mail FORM. <address> is the recipients email address, <subject> is
-       a predefined subject and <url> is the URL of an acknowledgement page.
-       Any of the parameters may be skipped; since address and subject
-       are required, mailto will generate input fields if they're
+     - Calling /cgi-bin/mailto/<address> gives you a template
+       mail FORM. <address> is the recipients email address.
+       The parameter may be skipped; since address
+       is required, mailto will generate an input field if it's
        missing.
 
        You may also call it from within a simple shell and you'll get
        an example as well.
 
      - Create your own customized/beautified FORM with METHOD=POST and
-       ACTION=/cgi-bin/mailto/<address>/<subject>/<url>. As above, <address>
-       is the recipients email address, <subject> is a predefined subject and
-       <url> is the URL of an acknowledgement page. You can replace any of
-       these parameters by INPUTs with NAME= "To", "Subject" or "Acknowledge"
-       respectivly, which may also be of TYPE=hidden (recommended for the
-       acknowledgement URL). These INPUTs will be treated special, as will
+       ACTION=/cgi-bin/mailto/<address>. As above, <address>
+       is the recipients email address.
+       You can replace
+       this parameter by an INPUT with NAME= "To"
+       which may also be of TYPE=hidden.
+       This INPUT will be treated special, as will
        be NAME="From" (NAME="Reply-To" provides the same functionality but
        is obsolete and it's use is discouraged) and NAME="Copy-Self". They
-       all have precedence over the URL parameters. Use of the INPUTs is
+       all have precedence over the URL parameters. Use of the INPUT is
        recommended.
        When the FORM is submitted, the <address> (or the VALUE of the
        NAME="To" field) will be checked against the configuration file, the
        contents will be converted into a mail message and the message will be
-       sent to <address> (<realname>) with <subject> (or the VALUE of the
-       NAME="Subject" field) as the subject. Input fields will be listed as
+       sent to <address> (<realname>) with the VALUE of the
+       NAME="Subject" field as the subject. Input fields will be listed as
        "<name>: <content><LF>" for one-line-contents and as
        "<name>:<LF><content><LF><content><LF>.<LF>" for multi-line-contents
        with leading periods preceeded by another period.
        If an INPUT with TYPE="checkbox" and NAME="Copy-Self" has been checked,
        a copy of the message will be sent to the originator of the message
        as specified in the NAME="From" (or NAME="Reply-To") field.
-       If <url> (or a field with NAME="Acknowledge") was specified, it will
+       If a field with NAME="Acknowledge" was specified, it will
        be sent back as a confirmation to the sender.
 
      - Only addresses that are listed in /etc/mailto.conf are valid
