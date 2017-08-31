@@ -2,19 +2,6 @@
 
 #define	TITLE	"WWW Mail Gateway"
 
-/* We need a default form */
-
-#define	DEFAULT_FORM_HEADER	"<FORM ACTION=\"%s\" METHOD=POST>\n"
-#define	DEFAULT_FORM_ADDRESS	"<STRONG>Empf&auml;nger-Adresse:</STRONG> <INPUT NAME=\"%s\" SIZE=42><BR>\n"
-#define	DEFAULT_FORM_CC	"<STRONG>Kopie an:</STRONG> <INPUT NAME=\"%s\" SIZE=42><BR>\n"
-#define	DEFAULT_FORM_SUBJECT	"<STRONG>Betreff:</STRONG> <INPUT NAME=\"%s\" SIZE=54><BR>\n"
-#define	DEFAULT_FORM_HIDDEN	"<INPUT TYPE=hidden NAME=\"%s\" VALUE=\"%s\">\n"
-#define	DEFAULT_FORM_TRAILER	"<STRONG>Absender-Adresse:</STRONG> <INPUT NAME=\"Reply-To\" SIZE=44><BR>\n\
-<STRONG>Nachricht:</STRONG><TEXTAREA NAME=\"Body\" COLS=60 ROWS=9></TEXTAREA><BR>\n\
-<INPUT TYPE=submit VALUE=\"Abschicken\">\n\
-<INPUT TYPE=reset VALUE=\"L&ouml;schen\">\n\
-</FORM>\n"
-
 /* Everything's fine */
 
 #define	SUCCESS_HEADER	NULL

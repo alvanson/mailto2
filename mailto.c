@@ -560,35 +560,19 @@ int main(int argc, char *argv[])
             fprintf(stderr, "address=\"%s\"\n", address);
     }
 
-	/* In case we get a GET request, spit out a minimal mail form */
-	ptr=getenv("REQUEST_METHOD");
-	if (debug)
-		(void)fprintf(stderr,"REQUEST_METHOD=\"%s\"\n",ptr);
-	if (!ptr||strcmp(ptr,"POST")) {
-		show_header(NULL,NULL);
-		(void)printf(DEFAULT_FORM_HEADER,"/cgi-bin/mailto");
-		(void)printf(address?DEFAULT_FORM_HIDDEN:DEFAULT_FORM_ADDRESS,"To",address);
-		(void)printf(DEFAULT_FORM_CC,"Cc");
-		(void)printf(subject?DEFAULT_FORM_HIDDEN:DEFAULT_FORM_SUBJECT,"Subject",subject);
-		if (location)
-			(void)printf(DEFAULT_FORM_HIDDEN,"Acknowledge",location);
-		(void)printf(DEFAULT_FORM_TRAILER);
-		show_trailer();
-	}
-
-	else {
-		/* Sometimes this doesn't work - due to broken clients?
-		char	buffer[1024];
-		if (strcmp(getenv("CONTENT_TYPE"),"application/x-www-form-urlencoded")) {
-			(void)sprintf(buffer,ERROR_CONTENT_TYPE,getenv("CONTENT_TYPE"),"application/x-www-form-urlencoded");
-			show_fatal(buffer);
-		}
-		*/
-
-		/* Parse form, extract special keywords */
-		cl=atoi(getenv("CONTENT_LENGTH"));
-		if (cl==0)
-			show_fatal(ERROR_CONTENT_LENGTH);
+    /* only accept POST requests */
+    ptr = getenv("REQUEST_METHOD");
+    if (debug)
+        fprintf(stderr, "REQUEST_METHOD=\"%s\"\n", ptr);
+    if (!ptr || strcmp(ptr, "POST") != 0) {
+        show_fatal(ERROR_REQUEST_METHOD);
+    } else {
+        /* parse form content, extract special keywords */
+        ptr = getenv("CONTENT_LENGTH");
+        cl = ptr ? atoi(ptr) : 0;
+        if (cl <= 0) {
+            show_fatal(ERROR_CONTENT_LENGTH);
+        }
 		max=0;
 		while (cl&&(!feof(stdin))) {
 			val=fmakeword(stdin,'&',&cl);

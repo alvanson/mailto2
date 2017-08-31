@@ -2,19 +2,6 @@
 
 #define	TITLE	"WWW Mail Gateway"
 
-/* We need a default form */
-
-#define	DEFAULT_FORM_HEADER	"<FORM ACTION=\"%s\" METHOD=POST>\n"
-#define	DEFAULT_FORM_ADDRESS	"<STRONG>Send mail to:</STRONG> <INPUT NAME=\"%s\" SIZE=48><BR>\n"
-#define	DEFAULT_FORM_CC	"<STRONG>Carbon copy to:</STRONG> <INPUT NAME=\"%s\" SIZE=48><BR>\n"
-#define	DEFAULT_FORM_SUBJECT	"<STRONG>Subject:</STRONG> <INPUT NAME=\"%s\" SIZE=53><BR>\n"
-#define	DEFAULT_FORM_HIDDEN	"<INPUT TYPE=hidden NAME=\"%s\" VALUE=\"%s\">\n"
-#define	DEFAULT_FORM_TRAILER	"<STRONG>Your eMail address:</STRONG> <INPUT NAME=\"Reply-To\" SIZE=43><BR>\n\
-<STRONG>Message:</STRONG><TEXTAREA NAME=\"Body\" COLS=60 ROWS=9></TEXTAREA><BR>\n\
-<INPUT TYPE=submit VALUE=\"Submit\">\n\
-<INPUT TYPE=reset>\n\
-</FORM>\n"
-
 /* Everything's fine */
 
 #define	SUCCESS_HEADER	NULL

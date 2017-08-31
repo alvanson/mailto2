@@ -30,15 +30,6 @@
 	       <address> (<realname>)
        <realname> is optional.
 
-     - Calling /cgi-bin/mailto/<address> gives you a template
-       mail FORM. <address> is the recipients email address.
-       The parameter may be skipped; since address
-       is required, mailto will generate an input field if it's
-       missing.
-
-       You may also call it from within a simple shell and you'll get
-       an example as well.
-
      - Create your own customized/beautified FORM with METHOD=POST and
        ACTION=/cgi-bin/mailto/<address>. As above, <address>
        is the recipients email address.
