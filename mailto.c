@@ -69,11 +69,13 @@ extern char	*sys_errlist[];
 /* Global variables */
 
 #define BUFSIZE 8192
+#define MAXFIELDS 1024
 
 char	master[]=MASTER;
 char mailname[256];
-char	*htag[1024],*hval[1024];
-int	max,debug=0;
+char *htag[MAXFIELDS], *hval[MAXFIELDS];
+size_t max;
+int	debug=0;
 
 
 #define ENC_8859_1	"������������"
@@ -660,8 +662,9 @@ int main(int argc, char *argv[])
                     } else if (strcmp(tag, "Acknowledge") == 0) {
                         location = secure(val);
                     } else {
-                        htag[max] = tag;
-                        hval[max] = stripcr(val);
+                        /* treat htag, hval as circular buffers */
+                        htag[max % MAXFIELDS] = tag;
+                        hval[max % MAXFIELDS] = stripcr(val);
                         max++;
                     }
                 }
