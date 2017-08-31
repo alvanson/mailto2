@@ -1,7 +1,7 @@
-This is the Debian GNU/Linux prepackaged version of Andreas Ley's
-mailto program.
+This is Differentiated Analytics Inc.'s fork of the Debian GNU/Linux
+prepackaged version of Andreas Ley's mailto program.
 
-This package was put together by Martin Schulze <joey@debian.org>,
+The Debian package was put together by Martin Schulze <joey@debian.org>,
 from sources obtained from:
  ftp://ftp.rz.uni-karlsruhe.de/pub/net/www/tools/cgi-src/mailto.tar.gz
 

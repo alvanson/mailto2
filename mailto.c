@@ -1,128 +1,30 @@
 /*
-** Mailto v1.3.2
-**
-** A WWW FORMs to Mail gateway
+** mailto2 - WWW form to mail gateway
 **
 ** Copyright (c) 1994-1999 by Andreas Ley <ley@rz.uni-karlsruhe.de>
 ** Copyright (c) 1998,2004 by Martin Schulze <joey@infodrom.org>
+** Copyright (c) 2017 by Differentiated Analytics Inc.
+**                       <info@differentiatedanalytics.ca>
 **
-** Permission to use, copy, modify, and distribute this software for any
-** purpose and without fee is hereby granted, provided that the above
-** copyright notice appears in all copies. This software is provided "as is"
-** and without any express or implied warranties.
+** This program is free software; you can redistribute it and/or modify
+** it under the terms of the GNU General Public License as published by
+** the Free Software Foundation; either version 2 of the License, or
+** (at your option) any later version.
 **
-** This program has been tested on a HP9000/715 with HP-UX A.09.05
-** In this environment, neither lint -u nor gcc -Wall produce any messages.
-** If you encounter any errors or need to make any changes to port it
-** to another platform, please contact me.
+** This program is distributed in the hope that it will be useful,
+** but WITHOUT ANY WARRANTY; without even the implied warranty of
+** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+** GNU General Public License for more details.
 **
-** Usage:
-**    - Since WWW is anonymous, mail sent through the WWW Mail Gateway
-**	is anonymous, too. Some people don't like to get anonymous mail,
-**	that's why mailto can be used with an access configuration file,
-**	which specifies who is enabled to get mail through the WWW Mail
-**	Gateway. If you don't need access control, just undefine ADDRESSES,
-**	otherwise point it to a configuration file with entries:
-**		<address> (<realname>)
-**	<realname> is optional.
-**    - Calling /cgi-bin/mailto/<address>/<subject>/<url> gives you a template
-**	mail FORM. <address> is the recipients email address, <subject> is
-**	a predefined subject and <url> is the URL of an acknowledgement page.
-**	Any of the parameters may be skipped; since address and subject
-**	are required, mailto will generate input fields if they're missing.
-**    - Create your own customized/beautified FORM with METHOD=POST and
-**	ACTION=/cgi-bin/mailto/<address>/<subject>/<url>. As above, <address>
-**	is the recipients email address, <subject> is a predefined subject and
-**	<url> is the URL of an acknowledgement page. You can replace any of
-**	these parameters by INPUTs with NAME= "To", "Subject" or "Acknowledge"
-**	respectivly, which may also be of TYPE=hidden (recommended for the
-**	acknowledgement URL). These INPUTs will be treated special, as will
-**	be NAME="From" (NAME="Reply-To" provides the same functionality but
-**	is obsolete and it's use is discouraged), NAME="Cc" and
-**	NAME="Copy-Self". They all have precedence over the URL parameters. Use
-**	of the INPUTs is recommended.
-**	When the FORM is submitted, the <address> (or the VALUE of the
-**	NAME="To" field) will be checked against the configuration file, the
-**	contents will be converted into a mail message and the message will be
-**	sent to <address> (<realname>) with <subject> (or the VALUE of the
-**	NAME="Subject" field) as the subject. Input fields will be listed as
-**	"<name>: <content><LF>" for one-line-contents and as
-**	"<name>:<LF><content><LF><content><LF>.<LF>" for multi-line-contents
-**	with leading periods preceeded by another period.
-**	If there is a field with NAME="Cc", a carbon copy of the mail message
-**	will be sent to the addresses listed in its VALUE.
-**	If an INPUT with TYPE="checkbox" and NAME="Copy-Self" has been checked,
-**	a copy of the message will be sent to the originator of the message
-**	as specified in the NAME="From" (or NAME="Reply-To") field.
-**	If <url> (or a field with NAME="Acknowledge") was specified, it will
-**	be sent back as a confirmation to the sender.
-**
-** Version history
-**
-** Version 1.3.2 - 2.3.1999
-**	Conditional error-to.
-**
-** Version 1.3.1 - 2.9.1998
-**	Fixed carbon copy option.
-**
-** Version 1.3 - 13.8.96
-**	Option to send a carbon copy. (Not yet working)
-**
-** Version 1.2.7 - 12.4.96
-**	Added random number (pid) code to subject parsing
-**
-** Version 1.2.6 - 30.1.96
-**	Fixed address checking bug with addresses without realnames
-**
-** Version 1.2.5 - 29.1.96
-**	Added debugging output
-**	Fixed some possible references to null-pointers
-**
-** Version 1.2.4 - 25.1.96
-**	Added support for machines lacking strerror(3C)
-**
-** Version 1.2.3 - 27.9.95
-**	Gateway identifies with Sender: instead of From:
-**	User address now specified in From: field, Reply-To alias for From
-**
-** Version 1.2.2 - 5.9.95
-**	Added <TAB> to the address file separators
-**
-** Version 1.2.1 - 2.8.95
-**	X- postfix for Addr, Host, Ident and User headers.
-**
-** Version 1.2 - 1.6.95
-**	Option to send a copy of the generated mail to oneself.
-**	Fixed bug when client sends <CR><LF> instead of <LF> only.
-**
-** Version 1.1.1 - 23.1.95
-**	Option to show generated mail in automatic acknowledgement page.
-**
-** Version 1.1 - 19.1.95
-**	Added evaluation of INPUT fields for To, Subject and Acknowledge.
-**	Default FORM now generates INPUT fields instead of URL parameters.
-**
-** Version 1.0.2 - 23.8.94
-**	Fixed location bug.
-**	Supplies default FORM on method GET now.
-**
-** Version 1.0.1 - 10.6.94
-**	Fixed documentation bug.
-**
-** Version 1.0 - 10.6.94
-**	Initial version
-**
-** Thanx for bug reports, ideas and fixes to
-**	anr@ime.usp.br (Adriano R.)
-**	pall@rz.uni-karlsruhe.de (Michael Pall)
-**	otisg@cobalt.middlebury.edu (Otis Gospodnetic)
-**	joey@infodrom.org (Martin Schulze)
-**
-** A current version of mailto can be retrieved from
-**	ftp://ftp.rz.uni-karlsruhe.de/pub/net/www/tools/cgi-src/mailto.tar.gz
+** You should have received a copy of the GNU General Public License along
+** with this program; if not, write to the Free Software Foundation, Inc.,
+** 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-char header[]="mailto v1.3.2\n(c) 1994-1999 by Andreas Ley <Andreas.Ley@rz.uni-karlsruhe.de>\n";
+char header[]="mailto2 20170831\n"
+"(c) 1994-1999 by Andreas Ley <Andreas.Ley@rz.uni-karlsruhe.de>\n"
+"(c) 1998,2004 by Martin Schulze <joey@infodrom.org>\n"
+"(c) 2017 by Differentiated Analytics Inc. <info@differentiatedanalytics.ca>\n";
 
 /* General definitions */
 
@@ -179,7 +81,7 @@ char	*htag[1024],*hval[1024];
 int	max,debug=0;
 
 
-#define ENC_8859_1	"ÄäÖöÜüßÅåÆæø"
+#define ENC_8859_1	"ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½"
 
 /* Prints header of a HTML-Request */
 void show_header(char *subtitle, char *description)
@@ -255,7 +157,7 @@ void show_location(char *location)
 	(void)printf("Content-length: %ld\n", (long) (strlen (REDIRECT)-4+2*strlen (location)));
 	(void)printf("Status: 302 Temporal Relocation\n");
 	(void)printf("Location: %s\n\n", location);
-	
+
 	(void)printf(REDIRECT, location, location);
 }
 
