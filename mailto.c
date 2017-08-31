@@ -76,7 +76,7 @@ void plustospace(char *str);
 /* Global variables */
 
 char	master[]=MASTER;
-char    hostname[255];
+char mailname[256];
 char	*htag[1024],*hval[1024];
 int	max,debug=0;
 
@@ -103,7 +103,7 @@ void show_header(char *subtitle, char *description)
 	(void)printf("<BODY>\n");
 	(void)printf("<H1>%s</H1>\n",subtitle?subtitle:TITLE);
 	if (description) {
-		(void)printf(description,master,hostname);
+		(void)printf(description,master,mailname);
 		(void)printf("<P>\n");
 	}
 }
@@ -139,7 +139,7 @@ void show_fatal(char *error)
 	if (debug)
 		(void)fprintf(stderr,"show_fatal(\"%s\")\n",error);
 	show_header(ERROR,error);
-	(void)printf(ERROR_FATAL,master,hostname);
+	(void)printf(ERROR_FATAL,master,mailname);
 	(void)printf("<P>\n");
 	show_trailer();
 	exit(0);
@@ -290,7 +290,7 @@ char *checkaccess(char *address,int check)
 			}
 		(void)fclose(src);
 		if (check) {
-			(void)sprintf(buffer,BAD_ADDRESS,address,master,hostname);
+			(void)sprintf(buffer,BAD_ADDRESS,address,master,mailname);
 			show_error(buffer);
 		}
 		else
@@ -385,7 +385,7 @@ void mailto(char *address, char *fulladdress, char *cc, char *bcc, char *subject
 	strcpy(buffer,MAILCMD);
 	if ((dest=popen(buffer,"w"))) {
 		(void)fprintf(dest,"HELO localhost\r\n");
-		(void)fprintf(dest,"MAIL FROM:<%s@%s>\r\n",SENDER,hostname);
+		(void)fprintf(dest,"MAIL FROM:<%s@%s>\r\n",SENDER,mailname);
 		(void)fprintf(dest,"RCPT TO:<%s>\r\n",address);
 		if (cc)
 			(void)fprintf(dest,"RCPT TO:<%s>\r\n",cc);
@@ -396,9 +396,9 @@ void mailto(char *address, char *fulladdress, char *cc, char *bcc, char *subject
 		(void)fprintf(dest,"DATA\r\n");
 		(void)fprintf(dest,"From: %s\r\n",from);
 		(void)fprintf(dest,"Subject: %s\r\n",subject);
-		(void)fprintf(dest,"Sender: %s@%s\r\n",SENDER,hostname);
+		(void)fprintf(dest,"Sender: %s@%s\r\n",SENDER,mailname);
 #ifdef ERRORS_TO
-		(void)fprintf(dest,"Errors-To: %s@%s\r\n",ERRORS_TO,hostname);
+		(void)fprintf(dest,"Errors-To: %s@%s\r\n",ERRORS_TO,mailname);
 #endif
 		(void)fprintf(dest,"To: %s\r\n",fulladdress);
 		if ((enc = encoding()) != NULL) {
@@ -466,6 +466,52 @@ void usage(char *image)
 }
 
 
+/* get the local mailname for later insertion */
+void getmailname(char *name, size_t len)
+{
+    FILE *f;
+    size_t sl;
+    char *hostname;
+    struct addrinfo hints;
+    struct addrinfo *result;
+
+    name[0] = '\0';
+
+    /* try /etc/mailname first (Debian specific) */
+    if ((f = fopen("/etc/mailname", "r")) != NULL) {
+        if (fgets(name, len, f)) {
+            /* strip trailing newline */
+            sl = strlen(name);
+            if (sl > 0 && name[sl-1] == '\n') {
+                name[sl-1] = '\0';
+            }
+        }
+        fclose(f);
+    }
+    /* fall back to gethostname() + getaddrinfo() */
+    if (!strlen(name)) {
+        hostname = malloc(len);
+        gethostname(hostname, len-1);
+        /* \0 not guaranteed by gethostname() if len exceeded */
+        hostname[len-1] = '\0';
+        /* best guess at mailname so far */
+        snprintf(name, len, "%s", hostname);
+        /* get canonical name */
+        memset(&hints, 0, sizeof(struct addrinfo));
+        hints.ai_family = AF_UNSPEC;    /* allow IPv4 or IPv6 */
+        hints.ai_flags = AI_CANONNAME;  /* get canonical name */
+        if (getaddrinfo(hostname, NULL, &hints, &result) == 0) {
+            /* canonical name returned in first addrinfo structure */
+            if (result != NULL) {
+                snprintf(name, len, "%s", result->ai_canonname);
+            }
+        }
+        freeaddrinfo(result);
+        free(hostname);
+    }
+}
+
+
 int main(int argc, char *argv[])
 {
 	int	c;
@@ -473,9 +519,6 @@ int main(int argc, char *argv[])
 	char	*address,*fulladdress,*from,*cc,*bcc,*subject,*location;
 	char	*tag,*val;
 	int	cl,cnt,copyself;
-	char	localhost[100];
-	struct	hostent *hent;
-	FILE	*f;
 
 	while ((c=getopt(argc,argv,"Dvh?")) != EOF)
 		switch ((char)c) {
@@ -499,31 +542,9 @@ int main(int argc, char *argv[])
 	bcc=NULL;
 	copyself=FALSE;
 
-	/* Get the local hostname for later insertion */
-	hostname[0] = '\0';
-
-	/* /etc/mailname is Debian specific */
-	if ((f = fopen ("/etc/mailname", "r")) != NULL) {
-	  if (fgets (hostname, sizeof(hostname), f)) {
-	    if (hostname[strlen(hostname)-1] == '\n')
-	      hostname[strlen(hostname)-1] = '\0';
-	  } else
-	    hostname[0] = '\0';
-	  fclose (f);
-	}
-
-	if (!strlen(hostname)) {
-	gethostname(localhost, sizeof(localhost));
-	if ( index(localhost, '.')) {
-		snprintf(hostname, sizeof(hostname), "%s", localhost);
-	} else {
-		hent = gethostbyname(localhost);
-		if ( hent )
-			snprintf(hostname, sizeof(hostname), "%s", hent->h_name);
-		else
-			snprintf(hostname, sizeof(hostname), "%s", localhost);
-	}
-	}
+    getmailname(mailname, sizeof(mailname));
+    if (debug)
+        fprintf(stderr, "mailname=\"%s\"\n", mailname);
 
 	ptr=getenv("PATH_INFO");
 	if (debug)
@@ -686,7 +707,7 @@ int main(int argc, char *argv[])
 #ifdef FULL_ACKNOWLEDGE
 			(void)printf(SUCCESS_FROM,from);
 			(void)printf(SUCCESS_SUBJECT,subject);
-			(void)printf(SUCCESS_SENDER,SENDER,hostname);
+			(void)printf(SUCCESS_SENDER,SENDER,mailname);
 			(void)printf(SUCCESS_TO,fulladdress);
 			if (cc)
 				(void)printf(SUCCESS_CC,cc);
