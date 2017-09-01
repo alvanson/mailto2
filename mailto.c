@@ -31,7 +31,6 @@ char header[]="mailto2 20170831\n"
 #define POSTMASTER "postmaster"
 #define WEBMASTER "webmaster"
 #define SENDER "www"
-#define	FULL_ACKNOWLEDGE	/* Define this if you want an automatic full acknowledgement page */
 
 /* File locations */
 
@@ -67,67 +66,66 @@ size_t max;
 int	debug=0;
 
 
-/* Prints header of a HTML-Request */
+/* print header of an HTML response */
 void show_header(char *subtitle, char *description)
 {
-	char	*ptr;
+    if (debug)
+        fprintf(stderr, "show_header(\"%s\",\"%s\")\n", subtitle, description);
 
-	if (debug)
-		(void)fprintf(stderr,"show_header(\"%s\",\"%s\")\n",subtitle,description);
-	while ((ptr=strchr(header,'\n')))
-		*ptr=' ';
-	(void)printf("Content-type: text/html\n\n");
-	(void)printf("<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML//EN\">\n");
-	(void)printf("<!-- %s-->\n",header);
-	(void)printf("<HTML>\n");
-	(void)printf("<HEAD>\n");
-	(void)printf("<TITLE>%s%s%s</TITLE>\n",TITLE,subtitle?" - ":"",subtitle?subtitle:"");
-	(void)printf("</HEAD>\n");
-	(void)printf("<BODY>\n");
-	(void)printf("<H1>%s</H1>\n",subtitle?subtitle:TITLE);
-	if (description) {
-		(void)printf(description,WEBMASTER,mailname);
-		(void)printf("<P>\n");
-	}
+    printf("Content-type: text/html\n\n");
+    printf("<!DOCTYPE html>\n");
+    printf("<!--\n%s-->\n", header);
+    printf("<html>\n");
+    printf("  <head>\n");
+    printf("    <meta charset=\"utf-8\" />\n");
+    printf("    <title>%s%s%s</title>\n", TITLE, subtitle ? " - " : "" , subtitle ? subtitle : "");
+    printf("  </head>\n");
+    printf("  <body>\n");
+    printf("    <h1>%s</h1>\n", subtitle ? subtitle : TITLE);
+    if (description) {
+        printf("<p>");
+        printf(description, WEBMASTER, mailname);
+        printf("</p>\n");
+    }
 }
 
 
-
-/* Prints trailer of a HTML-Request */
+/* print footer (trailer) of an HTML response */
 void show_trailer()
 {
-	if (debug)
-		(void)fprintf(stderr,"show_trailer()\n");
-	(void)printf("</BODY>\n");
-	(void)printf("</HTML>\n");
+    if (debug)
+        fprintf(stderr, "show_trailer()\n");
+
+    printf("  </body>\n");
+    printf("</html>\n");
 }
 
 
-
-/* Shows an error page, based on wrong user input */
+/* print an error page (wrong user input) */
 void show_error(char *error)
 {
-	if (debug)
-		(void)fprintf(stderr,"show_error(\"%s\")\n",error);
-	show_header(ERROR,error);
-	show_trailer();
-	exit(0);
+    if (debug)
+        fprintf(stderr, "show_error(\"%s\")\n", error);
+
+    show_header(ERROR, error);
+    show_trailer();
+    exit(0);
 }
 
 
-
-/* Shows an error page, based on internal misfunction */
+/* print an error page (internal malfunction) */
 void show_fatal(char *error)
 {
-	if (debug)
-		(void)fprintf(stderr,"show_fatal(\"%s\")\n",error);
-	show_header(ERROR,error);
-	(void)printf(ERROR_FATAL,WEBMASTER,mailname);
-	(void)printf("<P>\n");
-	show_trailer();
-	exit(0);
-}
+    if (debug)
+        fprintf(stderr, "show_fatal(\"%s\")\n", error);
 
+    show_header(ERROR, error);
+    printf("<p>");
+    printf(ERROR_FATAL, WEBMASTER, mailname);
+    printf("</p>\n");
+    show_trailer();
+    exit(0);
+}
 
 
 /* redirect to supplied location */
@@ -513,9 +511,8 @@ int main(int argc, char *argv[])
 	char	*ptr,*nptr;
 	char	*address,*from,*cc,*bcc,*subject,*location;
 	char	*tag,*val;
-    size_t cl;
+    size_t cl, i;
     char *saveptr;
-	int	cnt;
 
 	while ((c=getopt(argc,argv,"Dvh?")) != EOF)
 		switch ((char)c) {
@@ -621,54 +618,62 @@ int main(int argc, char *argv[])
         if (location && *location) {
             show_location(location);
         } else {
-			show_header(SUCCESS_HEADER,NULL);
-			if (cc||bcc) {
-				(void)printf(SUCCESS_SENT,address);
-					if (bcc) {
-						if (cc)
-							(void)printf(SUCCESS_ALSO,cc);
-						(void)printf(SUCCESS_COPY,bcc);
-					}
-					else
-						(void)printf(SUCCESS_COPY,cc);
-			}
-			else
-				(void)printf(SUCCESS_DESC);
-#ifdef FULL_ACKNOWLEDGE
-			(void)printf(SUCCESS_FROM,from);
-			(void)printf(SUCCESS_SUBJECT,subject);
-			(void)printf(SUCCESS_SENDER,SENDER,mailname);
-			(void)printf(SUCCESS_TO,address);
-			if (cc)
-				(void)printf(SUCCESS_CC,cc);
-			if (bcc)
-				(void)printf(SUCCESS_BCC,bcc);
-			if ((ptr=getenv("REMOTE_ADDR"))&&*ptr)
-				(void)printf(SUCCESS_ADDR,ptr);
-			if ((ptr=getenv("REMOTE_HOST"))&&*ptr)
-				(void)printf(SUCCESS_HOST,ptr);
-			if ((ptr=getenv("REMOTE_IDENT"))&&*ptr)
-				(void)printf(SUCCESS_IDENT,ptr);
-			if ((ptr=getenv("REMOTE_USER"))&&*ptr)
-				(void)printf(SUCCESS_USER,ptr);
-			for (cnt=0;cnt<max;cnt++) {
-				if (strchr(hval[cnt],'\n')) {
-					(void)printf(SUCCESS_MULTI,htag[cnt]);
-					ptr=hval[cnt];
-					while ((nptr=strchr(ptr,'\n'))) {
-						*nptr++='\0';
-						(void)printf(SUCCESS_LINE,secure(ptr));
-						ptr=nptr;
-					}
-					(void)printf(SUCCESS_LINE,secure(ptr));
-				}
-				else
-					(void)printf(SUCCESS_SINGLE,htag[cnt],secure(hval[cnt]));
-			}
-#endif /* FULL_ACKNOWLEDGE */
-			show_trailer();
-		}
-	}
+            /* generate an acknowledgement page */
+            show_header(SUCCESS_HEADER, NULL);
+            printf(SUCCESS_SENT, address);
+            if (cc && bcc) {
+                printf(SUCCESS_ALSO, cc);
+                printf(SUCCESS_COPY, bcc);
+            } else if (cc) {
+                printf(SUCCESS_COPY, cc);
+            } else if (bcc) {
+                printf(SUCCESS_COPY, bcc);
+            } else {
+                printf(".\n");
+            }
+            printf(SUCCESS_FROM, from);
+            printf(SUCCESS_SENDER, SENDER, mailname);
+            printf(SUCCESS_TO, address);
+            if (cc) {
+                printf(SUCCESS_CC, cc);
+            }
+            if (bcc) {
+                printf(SUCCESS_BCC, bcc);
+            }
+            printf(SUCCESS_SUBJECT, subject);
+            if ((ptr = getenv("REMOTE_ADDR")) && *ptr) {
+                printf(SUCCESS_ADDR, ptr);
+            }
+            if ((ptr = getenv("REMOTE_HOST")) && *ptr) {
+                printf(SUCCESS_HOST, ptr);
+            }
+            if ((ptr = getenv("REMOTE_IDENT")) && *ptr) {
+                printf(SUCCESS_IDENT, ptr);
+            }
+            if ((ptr = getenv("REMOTE_USER")) && *ptr) {
+                printf(SUCCESS_USER, ptr);
+            }
+            for (i=0; i < max; i++) {
+                if ((nptr = strchr(hval[i], '\n'))) {
+                    /* multiline format */
+                    printf(SUCCESS_MULTI, htag[i]);
+                    ptr = hval[i];
+                    do {
+                        *nptr = '\0';
+                        printf(SUCCESS_LINE, secure(ptr));
+                        ptr = nptr + 1;
+                    } while ((nptr = strchr(ptr, '\n')));
+                    /* final line */
+                    printf(SUCCESS_LINE, secure(ptr));
+                }
+                else {
+                    /* single line format */
+                    printf(SUCCESS_SINGLE, htag[i], secure(hval[i]));
+                }
+            }
+            show_trailer();
+        }
+    }
 
 	return(0);
 }

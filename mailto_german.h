@@ -5,7 +5,6 @@
 /* Everything's fine */
 
 #define	SUCCESS_HEADER	NULL
-#define	SUCCESS_DESC	"Ihre Meldung wurde abgeschickt."
 #define	SUCCESS_SELF	"Ihre Meldung wurde an %s und eine Kopie an %s abgeschickt."
 #define	SUCCESS_ALSO	", %s"
 #define	SUCCESS_COPY	" und eine Kopie an %s abgeschickt.\n"
