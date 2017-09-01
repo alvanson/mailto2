@@ -28,16 +28,15 @@ char header[]="mailto2 20170831\n"
 
 /* General definitions */
 
-#define	MASTER	"root"  /* we add the local host part */
-#define	SENDER	"not-for-mail"
-#define ERRORS_TO	"webmaster"
-#define	SENDMAIL_SMTP	/* There's no other method yet */
+#define POSTMASTER "postmaster"
+#define WEBMASTER "webmaster"
+#define SENDER "www"
 #define	FULL_ACKNOWLEDGE	/* Define this if you want an automatic full acknowledgement page */
-/* #define	NEED_STRERROR	/ * Define this if you don't have strerr */
 
 /* File locations */
 
-#define	ADDRESSES	"/etc/mailto.conf"
+#define ADDRESSES "/etc/mailto.conf"
+#define MAILCMD "/usr/lib/sendmail -bs >/dev/null"
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -53,16 +52,6 @@ char header[]="mailto2 20170831\n"
 */
 #include "mailto_english.h"
 
-#ifdef SENDMAIL_SMTP
-#define	MAILCMD	"/usr/lib/sendmail -bs >/dev/null"
-#endif /* SENDMAIL_SMTP */
-
-#ifdef NEED_STRERROR
-extern int	sys_nerr;
-extern char	*sys_errlist[];
-#define	strerror(errno)	((errno)>=sys_nerr?"Undefined error":sys_errlist[errno])
-#endif /* NEED_STRERROR */
-
 #define	FALSE	0		/* This is the naked Truth */
 #define	TRUE	1		/* and this is the Light */
 
@@ -71,14 +60,12 @@ extern char	*sys_errlist[];
 #define BUFSIZE 8192
 #define MAXFIELDS 1024
 
-char	master[]=MASTER;
+char fqdn[256];
 char mailname[256];
 char *htag[MAXFIELDS], *hval[MAXFIELDS];
 size_t max;
 int	debug=0;
 
-
-#define ENC_8859_1	"������������"
 
 /* Prints header of a HTML-Request */
 void show_header(char *subtitle, char *description)
@@ -95,12 +82,11 @@ void show_header(char *subtitle, char *description)
 	(void)printf("<HTML>\n");
 	(void)printf("<HEAD>\n");
 	(void)printf("<TITLE>%s%s%s</TITLE>\n",TITLE,subtitle?" - ":"",subtitle?subtitle:"");
-	(void)printf("<LINK REV=\"made\" HREF=\"mailto:%s\">\n",master);
 	(void)printf("</HEAD>\n");
 	(void)printf("<BODY>\n");
 	(void)printf("<H1>%s</H1>\n",subtitle?subtitle:TITLE);
 	if (description) {
-		(void)printf(description,master,mailname);
+		(void)printf(description,WEBMASTER,mailname);
 		(void)printf("<P>\n");
 	}
 }
@@ -136,7 +122,7 @@ void show_fatal(char *error)
 	if (debug)
 		(void)fprintf(stderr,"show_fatal(\"%s\")\n",error);
 	show_header(ERROR,error);
-	(void)printf(ERROR_FATAL,master,mailname);
+	(void)printf(ERROR_FATAL,WEBMASTER,mailname);
 	(void)printf("<P>\n");
 	show_trailer();
 	exit(0);
@@ -289,7 +275,7 @@ char *checkaccess(char *address)
         }
         /* address not in file */
         fclose(f);
-        sprintf(line, BAD_ADDRESS, address, master, mailname);
+        sprintf(line, BAD_ADDRESS, address, POSTMASTER, mailname);
         show_error(line);
         return NULL;
     } else {
@@ -299,156 +285,104 @@ char *checkaccess(char *address)
 }
 
 
-char *encoding()
-{
-  int cnt;
-  char *cp;
-  static char enc[10];
-
-  for (cnt=0; cnt<max; cnt++)
-    for (cp=hval[cnt]; *cp; cp++) {
-      /*
-       * Linkname: Table demonstrating the UTF-8 encoding
-       *      URL: http://www1.tip.nl/~t876506/utf8tbl.html
-       *
-       *   If z is between and including 0 - 127, then there is 1 byte
-       *
-       *   If z is between and including 192 - 223, then there are 2 bytes
-       *
-       *   If z is between and including 224 - 239, then there are 3 bytes
-       *
-       *   If z is between and including 240 - 247, then there are 4 bytes
-       *
-       *   If z is between and including 248 - 251, then there are 5 bytes
-       *
-       *   If z is 252 or 253, then there are 6 bytes
-       *
-       *   If z = 254 or 255 then there is something wrong!
-       */
-      if ((*cp&0xE0)>=0xC0 &&
-	  *(cp+1) && (*(cp+1) & 0xC0) == 0x80){
-	strcpy(enc, "utf-8");
-	return enc;
-      } else if ((*cp&0xD0)>=0xD0 &&
-		 *(cp+1) && (*(cp+1) & 0xC0) == 0x80 &&
-		 *(cp+2) && (*(cp+2) & 0xC0) == 0x80) {
-	strcpy(enc, "utf-8");
-	return enc;
-      } else if ((*cp&0xF0)>=0xF0 &&
-		 *(cp+1) && (*(cp+1) & 0xC0) == 0x80 &&
-		 *(cp+2) && (*(cp+2) & 0xC0) == 0x80 &&
-		 *(cp+3) && (*(cp+3) & 0xC0) == 0x80) {
-	strcpy(enc, "utf-8");
-	return enc;
-      } else if ((*cp&0xF8)>=0xF8 &&
-		 *(cp+1) && (*(cp+1) & 0xC0) == 0x80 &&
-		 *(cp+2) && (*(cp+2) & 0xC0) == 0x80 &&
-		 *(cp+3) && (*(cp+3) & 0xC0) == 0x80 &&
-		 *(cp+4) && (*(cp+4) & 0xC0) == 0x80) {
-	strcpy(enc, "utf-8");
-	return enc;
-      } else if ((*cp&0xFC)>=0xFC &&
-		 *(cp+1) && (*(cp+1) & 0xC0) == 0x80 &&
-		 *(cp+2) && (*(cp+2) & 0xC0) == 0x80 &&
-		 *(cp+3) && (*(cp+3) & 0xC0) == 0x80 &&
-		 *(cp+4) && (*(cp+4) & 0xC0) == 0x80 &&
-		 *(cp+5) && (*(cp+5) & 0xC0) == 0x80) {
-	strcpy(enc, "utf-8");
-	return enc;
-      } else if ((*cp&0x7f)>=0x20 &&
-		 strchr(ENC_8859_1, *cp) != NULL) {
-	strcpy(enc, "iso-8859-1");
-	return enc;
-      }
-    }
-
-  return NULL;
-}
-
-
-/* Actually send mail to recipient */
+/* actually send mail to recipient(s) */
 void mailto(char *address, char *cc, char *bcc, char *subject, char *from)
 {
-	char	buffer[1024],error[2048],*ptr,*nptr;
-	int	cnt,retval;
-	FILE	*dest;
-	char	*enc;
+    FILE *p;
+    int i;
+    char *ptr, *nptr;
+    int retval;
+    char error[BUFSIZE];
 
-	if (debug)
-		(void)fprintf(stderr,"mailto(\"%s\",\"%s\",\"%s\",\"%s\",\"%s\")\n",address,cc,bcc,subject,from);
-#ifdef SENDMAIL_SMTP
-	strcpy(buffer,MAILCMD);
-	if ((dest=popen(buffer,"w"))) {
-		(void)fprintf(dest,"HELO localhost\r\n");
-		(void)fprintf(dest,"MAIL FROM:<%s@%s>\r\n",SENDER,mailname);
-		(void)fprintf(dest,"RCPT TO:<%s>\r\n",address);
-		if (cc)
-			(void)fprintf(dest,"RCPT TO:<%s>\r\n",cc);
-		if (bcc)
-			(void)fprintf(dest,"RCPT TO:<%s>\r\n",bcc);
-		(void)fprintf(dest,"DATA\r\n");
-		(void)fprintf(dest,"From: %s\r\n",from);
-		(void)fprintf(dest,"Subject: %s\r\n",subject);
-		(void)fprintf(dest,"Sender: %s@%s\r\n",SENDER,mailname);
-#ifdef ERRORS_TO
-		(void)fprintf(dest,"Errors-To: %s@%s\r\n",ERRORS_TO,mailname);
-#endif
-		if ((enc = encoding()) != NULL) {
-			(void)fprintf(dest,"Content-Type: text/plain; charset=%s\r\n", enc);
-			(void)fprintf(dest,"Content-Disposition: inline\r\n");
-			(void)fprintf(dest,"Content-Transfer-Encoding: 8bit\r\n");
-		}
-		if (cc)
-			(void)fprintf(dest,"Cc: %s\r\n",cc);
-		if ((ptr=getenv("REMOTE_ADDR"))&&*ptr)
-			(void)fprintf(dest,"X-Addr: %s\r\n",ptr);
-		if ((ptr=getenv("REMOTE_HOST"))&&*ptr)
-			(void)fprintf(dest,"X-Host: %s\r\n",ptr);
-		if ((ptr=getenv("REMOTE_IDENT"))&&*ptr)
-			(void)fprintf(dest,"X-Ident: %s\r\n",ptr);
-		if ((ptr=getenv("REMOTE_USER"))&&*ptr)
-			(void)fprintf(dest,"X-User: %s\r\n",ptr);
-		(void)fprintf(dest,"\r\n");
-		/* Print all the fields preceeded by their name */
-		for (cnt=0;cnt<max;cnt++) {
-			/* Names starting with a period must be escaped with another period */
-			if (*htag[cnt]=='.')
-				(void)fprintf(dest,".");
-			/* Multiline values have a different format... */
-			if (strchr(hval[cnt],'\n')) {
-				(void)fprintf(dest,"%s:\r\n",htag[cnt]);
-				ptr=hval[cnt];
-				while ((nptr=strchr(ptr,'\n'))) {
-					*nptr='\0';
-					if (*ptr=='.')
-						(void)fprintf(dest,"..");
-					(void)fprintf(dest,"%s\r\n",secure(ptr));
-					*nptr++='\n';
-					ptr=nptr;
-				}
-				(void)fprintf(dest,"%s\r\n",secure(ptr));
-				(void)fprintf(dest,"..\r\n");
-			}
-			/* ...while singlelines are just Name: Value */
-			else
-				(void)fprintf(dest,"%s: %s\r\n",htag[cnt],secure(hval[cnt]));
-		}
-		/* Ok, end of transmission */
-		(void)fprintf(dest,".\r\n");
-		(void)fprintf(dest,"QUIT\r\n");
-		retval=pclose(dest);
-		if (retval) {
-			(void)sprintf(error,ERROR_PCLOSE,MAILCMD,retval);
-			show_fatal(error);
-		}
-	}
-	else {
-		(void)sprintf(error,ERROR_POPEN,buffer,strerror(errno));
-		show_fatal(error);
-	}
-#endif
+    if (debug)
+        fprintf(stderr, "mailto(\"%s\",\"%s\",\"%s\",\"%s\",\"%s\")\n", address, cc, bcc, subject, from);
+
+    if ((p = popen(MAILCMD, "w"))) {
+        fprintf(p, "HELO %s\r\n", fqdn);
+        fprintf(p, "MAIL FROM:<%s@%s>\r\n", SENDER, mailname);
+        fprintf(p, "RCPT TO:<%s>\r\n", address);
+        if (cc) {
+            fprintf(p, "RCPT TO:<%s>\r\n", cc);
+        }
+        if (bcc) {
+            fprintf(p, "RCPT TO:<%s>\r\n", bcc);
+        }
+        fprintf(p, "DATA\r\n");
+        /* message headers */
+        fprintf(p, "From: %s\r\n", from);
+        fprintf(p, "Sender: %s@%s\r\n", SENDER, mailname);
+        fprintf(p, "To: %s\r\n", address);
+        if (cc) {
+            fprintf(p, "Cc: %s\r\n", cc);
+        }
+        fprintf(p, "Subject: %s\r\n", subject);
+        fprintf(p, "Content-Type: text/plain; charset=utf-8\r\n");
+        fprintf(p, "Content-Disposition: inline\r\n");
+        fprintf(p, "Content-Transfer-Encoding: 8bit\r\n");
+        if ((ptr = getenv("REMOTE_ADDR")) && *ptr) {
+            fprintf(p, "X-Addr: %s\r\n", ptr);
+        }
+        if ((ptr = getenv("REMOTE_HOST")) && *ptr) {
+            fprintf(p, "X-Host: %s\r\n", ptr);
+        }
+        if ((ptr = getenv("REMOTE_IDENT")) && *ptr) {
+            fprintf(p, "X-Ident: %s\r\n", ptr);
+        }
+        if ((ptr = getenv("REMOTE_USER")) && *ptr) {
+            fprintf(p, "X-User: %s\r\n", ptr);
+        }
+        fprintf(p, "\r\n");
+        /* message body: print all the fields preceeded by their name */
+        if (max > MAXFIELDS) {
+            max = MAXFIELDS;
+        }
+        for (i = 0; i < max; i++) {
+            /* tag dot-stuffing */
+            if (*htag[i] == '.') {
+                fprintf(p, ".");
+            }
+            if ((nptr = strchr(hval[i], '\n'))) {
+                /* multiline format */
+                fprintf(p, "%s:\r\n", htag[i]);
+                ptr = hval[i];
+                do {
+                    /* terminate line */
+                    *nptr = '\0';
+                    /* line dot-stuffing */
+                    if (*ptr == '.') {
+                        fprintf(p, ".");
+                    }
+                    fprintf(p, "%s\r\n", secure(ptr));
+                    /* restore newline */
+                    *nptr = '\n';
+                    /* get next line */
+                    ptr = nptr + 1;
+                } while ((nptr = strchr(ptr, '\n')));
+                /* final line */
+                if (*ptr == '.') {
+                    fprintf(p, ".");
+                }
+                fprintf(p, "%s\r\n", secure(ptr));
+                fprintf(p, "..\r\n");
+            } else {
+                /* single line format */
+                fprintf(p, "%s: %s\r\n", htag[i], secure(hval[i]));
+            }
+        }
+        /* end message */
+        fprintf(p, ".\r\n");
+        fprintf(p, "QUIT\r\n");
+        /* check return value for success */
+        retval = pclose(p);
+        if (retval) {
+            snprintf(error, sizeof(error), ERROR_PCLOSE, MAILCMD, retval);
+            show_fatal(error);
+        }
+    } else {
+        snprintf(error, sizeof(error), ERROR_POPEN, MAILCMD, strerror(errno));
+        show_fatal(error);
+    }
 }
-
 
 
 void usage(char *image)
@@ -458,14 +392,34 @@ void usage(char *image)
 }
 
 
+/* get the fqdn of this machine */
+void getfqdn(char *name, size_t len)
+{
+    struct addrinfo hints;
+    struct addrinfo *result;
+
+    gethostname(name, len-1);
+    /* \0 not guaranteed by gethostname() if len exceeded */
+    name[len-1] = '\0';
+    /* get canonical name */
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_family = AF_UNSPEC;    /* allow IPv4 or IPv6 */
+    hints.ai_flags = AI_CANONNAME;  /* get canonical name */
+    if (getaddrinfo(name, NULL, &hints, &result) == 0) {
+        /* canonical name returned in first addrinfo structure */
+        if (result != NULL) {
+            snprintf(name, len, "%s", result->ai_canonname);
+        }
+    }
+    freeaddrinfo(result);
+}
+
+
 /* get the local mailname for later insertion */
-void getmailname(char *name, size_t len)
+void getmailname(char *name, size_t len, char *fallback)
 {
     FILE *f;
     size_t sl;
-    char *hostname;
-    struct addrinfo hints;
-    struct addrinfo *result;
 
     name[0] = '\0';
 
@@ -480,26 +434,9 @@ void getmailname(char *name, size_t len)
         }
         fclose(f);
     }
-    /* fall back to gethostname() + getaddrinfo() */
+    /* fall back to supplied name */
     if (!strlen(name)) {
-        hostname = malloc(len);
-        gethostname(hostname, len-1);
-        /* \0 not guaranteed by gethostname() if len exceeded */
-        hostname[len-1] = '\0';
-        /* best guess at mailname so far */
-        snprintf(name, len, "%s", hostname);
-        /* get canonical name */
-        memset(&hints, 0, sizeof(struct addrinfo));
-        hints.ai_family = AF_UNSPEC;    /* allow IPv4 or IPv6 */
-        hints.ai_flags = AI_CANONNAME;  /* get canonical name */
-        if (getaddrinfo(hostname, NULL, &hints, &result) == 0) {
-            /* canonical name returned in first addrinfo structure */
-            if (result != NULL) {
-                snprintf(name, len, "%s", result->ai_canonname);
-            }
-        }
-        freeaddrinfo(result);
-        free(hostname);
+        snprintf(name, len, "%s", fallback);
     }
 }
 
@@ -606,7 +543,11 @@ int main(int argc, char *argv[])
 	cc=NULL;
 	bcc=NULL;
 
-    getmailname(mailname, sizeof(mailname));
+    getfqdn(fqdn, sizeof(fqdn));
+    if (debug)
+        fprintf(stderr, "fqdn=\"%s\"\n", fqdn);
+
+    getmailname(mailname, sizeof(mailname), fqdn);
     if (debug)
         fprintf(stderr, "mailname=\"%s\"\n", mailname);
 
