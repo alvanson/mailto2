@@ -259,45 +259,43 @@ char *stripcr(char *text)
 }
 
 
-
-char *checkaccess(char *address,int check)
+/* check for valid address */
+char *checkaccess(char *address)
 {
-	char	buffer[1024],*ptr;
-	int	len;
-	FILE	*src;
+    FILE *f;
+    char line[256];
+    char *ptr;
 
-	if (debug)
-		(void)fprintf(stderr,"checkaccess(\"%s\",%d)\n",address,check);
-#ifdef ADDRESSES
-	/* Check for valid address, extract full address (with personal name) */
-	if ((src=fopen(ADDRESSES,"r"))) {
-		len=strlen(address);
-		while(fgets(buffer,sizeof(buffer),src))
-			if (*buffer!='#') {
-				if ((ptr=strchr(buffer,'\n')))
-					*ptr='\0';
-				if (debug)
-					(void)fprintf(stderr,"checkaccess: \"%s\"\n",buffer);
-				if ((!strncasecmp(buffer,address,(size_t)len))&&(buffer[len]==' '||buffer[len]=='\t'||buffer[len]=='\0')) {
-					(void)fclose(src);
-					if (debug)
-						(void)fprintf(stderr,"checkaccess: valid \"%s\"\n",buffer);
-					return(strdup(buffer));
-				}
-			}
-		(void)fclose(src);
-		if (check) {
-			(void)sprintf(buffer,BAD_ADDRESS,address,master,mailname);
-			show_error(buffer);
-		}
-		else
-			return(address);
-	}
-	else
-		show_fatal(ERROR_READ);
-	/*NOTREACHED*/
-#endif /* ADDRESSES */
-	return(address);
+    if (debug)
+        fprintf(stderr, "checkaccess(\"%s\")\n", address);
+
+    if ((f = fopen(ADDRESSES, "r"))) {
+        while (fgets(line, sizeof(line), f)) {
+            if (*line != '#') {    /* skip comments */
+                /* strip trailing newline */
+                if ((ptr = strchr(line, '\n'))) {
+                    *ptr = '\0';
+                }
+                if (debug)
+                    fprintf(stderr, "checkaccess: \"%s\"\n", line);
+                if (strcmp(address, line) == 0) {
+                    /* address in file */
+                    fclose(f);
+                    if (debug)
+                        fprintf(stderr,"checkaccess: valid \"%s\"\n",line);
+                    return address;
+                }
+            }
+        }
+        /* address not in file */
+        fclose(f);
+        sprintf(line, BAD_ADDRESS, address, master, mailname);
+        show_error(line);
+        return NULL;
+    } else {
+        show_fatal(ERROR_READ);
+        return NULL;
+    }
 }
 
 
@@ -369,7 +367,7 @@ char *encoding()
 
 
 /* Actually send mail to recipient */
-void mailto(char *address, char *fulladdress, char *cc, char *bcc, char *subject, char *from)
+void mailto(char *address, char *cc, char *bcc, char *subject, char *from)
 {
 	char	buffer[1024],error[2048],*ptr,*nptr;
 	int	cnt,retval;
@@ -377,7 +375,7 @@ void mailto(char *address, char *fulladdress, char *cc, char *bcc, char *subject
 	char	*enc;
 
 	if (debug)
-		(void)fprintf(stderr,"mailto(\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\")\n",address,fulladdress,cc,bcc,subject,from);
+		(void)fprintf(stderr,"mailto(\"%s\",\"%s\",\"%s\",\"%s\",\"%s\")\n",address,cc,bcc,subject,from);
 #ifdef SENDMAIL_SMTP
 	strcpy(buffer,MAILCMD);
 	if ((dest=popen(buffer,"w"))) {
@@ -395,7 +393,6 @@ void mailto(char *address, char *fulladdress, char *cc, char *bcc, char *subject
 #ifdef ERRORS_TO
 		(void)fprintf(dest,"Errors-To: %s@%s\r\n",ERRORS_TO,mailname);
 #endif
-		(void)fprintf(dest,"To: %s\r\n",fulladdress);
 		if ((enc = encoding()) != NULL) {
 			(void)fprintf(dest,"Content-Type: text/plain; charset=%s\r\n", enc);
 			(void)fprintf(dest,"Content-Disposition: inline\r\n");
@@ -582,7 +579,7 @@ int main(int argc, char *argv[])
 {
 	int	c;
 	char	*ptr,*nptr;
-	char	*address,*fulladdress,*from,*cc,*bcc,*subject,*location;
+	char	*address,*from,*cc,*bcc,*subject,*location;
 	char	*tag,*val;
     size_t cl;
     char *saveptr;
@@ -671,29 +668,18 @@ int main(int argc, char *argv[])
             }
         }
 
-		if (address&&(ptr=strchr(address,' ')))
-			*ptr='\0';
+        /* ensure address and subject supplied */
+        if (!address || !*address || !subject || !*subject) {
+            show_error(ERROR_ADDRESS);
+        }
 
-		/* Test for required values */
-		if (!address||!subject)
-			show_error(ERROR_ADDRESS);
+        /* check for valid addresses */
+        address = checkaccess(address);
+        cc = (cc && *cc) ? checkaccess(cc) : NULL;
+        bcc = (bcc && *bcc) ? checkaccess(bcc) : NULL;
 
-		/* Add pid to subject */
-		if (strstr(subject,"%d")) {
-			val = strstr(subject,"%d");
-			ptr=malloc(strlen(subject)+16);
-			cnt = strlen(subject)+16;
-			*val = 0;
-			val += 2;
-			(void)snprintf(ptr,cnt,"%s%d%s",subject,getpid(),val);
-			if (debug)
-				(void)fprintf(stderr,"Subject: \"%s\" -> \"%s\"\n",subject,ptr);
-			subject=ptr;
-		}
-
-		/* Send mail */
-		fulladdress=checkaccess(address,TRUE);
-		mailto(address,fulladdress,cc,bcc,subject,from);
+        /* send mail */
+        mailto(address, cc, bcc, subject, from);
 
 		/* Drop the user a message */
 		if (location)
@@ -701,14 +687,14 @@ int main(int argc, char *argv[])
 		else {
 			show_header(SUCCESS_HEADER,NULL);
 			if (cc||bcc) {
-				(void)printf(SUCCESS_SENT,fulladdress);
+				(void)printf(SUCCESS_SENT,address);
 					if (bcc) {
 						if (cc)
-							(void)printf(SUCCESS_ALSO,checkaccess(cc,FALSE));
-						(void)printf(SUCCESS_COPY,checkaccess(bcc,FALSE));
+							(void)printf(SUCCESS_ALSO,cc);
+						(void)printf(SUCCESS_COPY,bcc);
 					}
 					else
-						(void)printf(SUCCESS_COPY,checkaccess(cc,FALSE));
+						(void)printf(SUCCESS_COPY,cc);
 			}
 			else
 				(void)printf(SUCCESS_DESC);
@@ -716,7 +702,7 @@ int main(int argc, char *argv[])
 			(void)printf(SUCCESS_FROM,from);
 			(void)printf(SUCCESS_SUBJECT,subject);
 			(void)printf(SUCCESS_SENDER,SENDER,mailname);
-			(void)printf(SUCCESS_TO,fulladdress);
+			(void)printf(SUCCESS_TO,address);
 			if (cc)
 				(void)printf(SUCCESS_CC,cc);
 			if (bcc)

@@ -27,8 +27,7 @@
        which specifies who is enabled to get mail through the WWW Mail
        Gateway. If you don't need access control, just undefine ADDRESSES,
        otherwise point it to a configuration file with entries:
-	       <address> (<realname>)
-       <realname> is optional.
+	       <address>
 
      - Create your own customized/beautified FORM with METHOD=POST and
        ACTION=/cgi-bin/mailto/<address>. As above, <address>
