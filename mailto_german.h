@@ -36,12 +36,3 @@
 #define	ERROR_POPEN	"Fehler beim Versenden der Meldung:<P><CODE>popen(\"%s\"): %s</CODE>"
 #define	ERROR_PCLOSE	"Fehler beim Versenden der Meldung:<P><CODE>%s</CODE> liefert exit code %d.  Mail kann verloren gegangen sein."
 #define	BAD_ADDRESS	"Die angegebene Adresse %s ist nicht in der Liste der erlaubten Adressen eingetragen. Um die Benutzer vor anonymen Mails zu sch&uuml;tzen, m&uuml;ssen potentielle Empf&auml;nger sich (via Email an %s@%s) in diese Liste eintragen lassen."
-
-/* Redirection */
-
-#define	REDIRECT	"<html>\r\n\
-<body>\r\n\
-Die Seite wurde nach <a href=\"%s\">%s</a> verschoben\r\n\
-</body>\r\n\
-</html>\r\n\
-"

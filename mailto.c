@@ -130,20 +130,15 @@ void show_fatal(char *error)
 
 
 
-/* Returns a Location: header */
+/* redirect to supplied location */
 void show_location(char *location)
 {
-	if (debug)
-		(void)fprintf(stderr,"show_location(\"%s\")\n",location);
+    if (debug)
+        fprintf(stderr, "show_location(\"%s\")\n", location);
 
-	(void)printf("Content-type: text/html\n");
-	(void)printf("Content-length: %ld\n", (long) (strlen (REDIRECT)-4+2*strlen (location)));
-	(void)printf("Status: 302 Temporal Relocation\n");
-	(void)printf("Location: %s\n\n", location);
-
-	(void)printf(REDIRECT, location, location);
+    printf("Status: 302 Found\n");
+    printf("Location: %s\n\n", location);
 }
-
 
 
 int tagindex(char **htag, int max, char *tagname)
@@ -622,10 +617,10 @@ int main(int argc, char *argv[])
         /* send mail */
         mailto(address, cc, bcc, subject, from);
 
-		/* Drop the user a message */
-		if (location)
-			show_location(location);
-		else {
+        /* redirect user to acknowledgement page */
+        if (location && *location) {
+            show_location(location);
+        } else {
 			show_header(SUCCESS_HEADER,NULL);
 			if (cc||bcc) {
 				(void)printf(SUCCESS_SENT,address);

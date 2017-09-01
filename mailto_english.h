@@ -36,12 +36,3 @@
 #define	ERROR_POPEN	"Error sending the mail:<P><CODE>popen(\"%s\"): %s</CODE>"
 #define	ERROR_PCLOSE	"Error sending the mail:<P><CODE>%s</CODE> returns exit code %d.  Mail could be lost."
 #define	BAD_ADDRESS	"Address %s isn't listed in the addresses file. To protect our users from anonymous mails, addresses have to be registered with %s@%s first."
-
-/* Redirection */
-
-#define	REDIRECT	"<html>\r\n\
-<body>\r\n\
-The page has been moved to <a href=\"%s\">%s</a>\r\n\
-</body>\r\n\
-</html>\r\n\
-"
