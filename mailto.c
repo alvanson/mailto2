@@ -150,73 +150,42 @@ int tagindex(char **htag, int max, char *tagname)
 }
 
 
-
+/* strip control and invalid (non utf-8) characters */
 char *secure(char *text)
 {
-	char	*src,*dest;
-	unsigned short i;
+    char *src, *dest;
+    size_t i;
 
-	if (debug)
-		(void)fprintf(stderr,"secure(\"%s\")\n",text);
-	if (text) {
-		for (src=text,dest=text;*src;)
-			  /*
-			   * Linkname: Table demonstrating the UTF-8 encoding
-			   *      URL: http://www1.tip.nl/~t876506/utf8tbl.html
-			   *
-			   *   If z is between and including 0 - 127, then there is 1 byte
-			   *
-			   *   If z is between and including 192 - 223, then there are 2 bytes
-			   *
-			   *   If z is between and including 224 - 239, then there are 3 bytes
-			   *
-			   *   If z is between and including 240 - 247, then there are 4 bytes
-			   *
-			   *   If z is between and including 248 - 251, then there are 5 bytes
-			   *
-			   *   If z is 252 or 253, then there are 6 bytes
-			   *
-			   *   If z = 254 or 255 then there is something wrong!
-			   */
-			if ((*src&0xE0)>=0xC0 &&
-			    *(src+1) && (*(src+1) & 0xC0) == 0x80)
-				for (i=0;i<2;i++)
-					*dest++=*src++;
-			else if ((*src&0xD0)>=0xD0 &&
-				 *(src+1) && (*(src+1) & 0xC0) == 0x80 &&
-				 *(src+2) && (*(src+2) & 0xC0) == 0x80)
-				for (i=0;i<3;i++)
-					*dest++=*src++;
-			else if ((*src&0xF0)>=0xF0 &&
-				 *(src+1) && (*(src+1) & 0xC0) == 0x80 &&
-				 *(src+2) && (*(src+2) & 0xC0) == 0x80 &&
-				 *(src+3) && (*(src+3) & 0xC0) == 0x80)
-				for (i=0;i<4;i++)
-					*dest++=*src++;
-			else if ((*src&0xF8)>=0xF8 &&
-				 *(src+1) && (*(src+1) & 0xC0) == 0x80 &&
-				 *(src+2) && (*(src+2) & 0xC0) == 0x80 &&
-				 *(src+3) && (*(src+3) & 0xC0) == 0x80 &&
-				 *(src+4) && (*(src+4) & 0xC0) == 0x80)
-				for (i=0;i<5;i++)
-					*dest++=*src++;
-			else if ((*src&0xFC)>=0xFC &&
-				 *(src+1) && (*(src+1) & 0xC0) == 0x80 &&
-				 *(src+2) && (*(src+2) & 0xC0) == 0x80 &&
-				 *(src+3) && (*(src+3) & 0xC0) == 0x80 &&
-				 *(src+4) && (*(src+4) & 0xC0) == 0x80 &&
-				 *(src+5) && (*(src+5) & 0xC0) == 0x80)
-				for (i=0;i<6;i++)
-					*dest++=*src++;
-			else if ((*src&0x7f)>=0x20)
-				*dest++=*src++;
-			else
-				src++;
-		*dest='\0';
-	}
-	if (debug)
-		(void)fprintf(stderr,"secure()=%p\n",text);
-	return(text);
+    if (debug)
+        fprintf(stderr, "secure(\"%s\")", text);
+
+    if (text) {
+        for (src=text, dest=text; *src; /* nop */) {
+            if (*src >= 0x20 && *src < 0x7f) { /* 1 byte, skip control characters and <DEL> (0x7f) */
+                *dest++ = *src++;
+            } else if ((*src & 0b11100000) == 0b11000000 &&     /* 2 byte prefix */
+                        (*(src+1) & 0b11000000) == 0b10000000) {    /* 2nd byte valid */
+                for (i=0; i<2; i++) *dest++ = *src++;
+            } else if ((*src & 0b11110000) == 0b11100000 &&     /* 3 byte prefix */
+                        (*(src+1) & 0b11000000) == 0b10000000 &&    /* 2nd byte valid */
+                        (*(src+2) & 0b11000000) == 0b10000000) {    /* 3rd byte valid */
+                for (i=0; i<3; i++) *dest++ = *src++;
+            } else if ((*src & 0b11111000) == 0b11110000 &&     /* 4 byte prefix */
+                        (*(src+1) & 0b11000000) == 0b10000000 &&    /* 2nd byte valid */
+                        (*(src+2) & 0b11000000) == 0b10000000 &&    /* 3rd byte valid */
+                        (*(src+3) & 0b11000000) == 0b10000000) {    /* 4th byte valid */
+                for (i=0; i<4; i++) *dest++ = *src++;
+            } else {
+                src++;
+            }
+        }
+        *dest = '\0';
+    }
+
+    if (debug)
+        fprintf(stderr, "=\"%s\"\n", text);
+
+    return text;
 }
 
 
