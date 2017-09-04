@@ -1,16 +1,16 @@
-PROJECT = mailto
-VERSION = 1.3
+PROJECT = mailto2
+VERSION = 20170831
 
-PREFIX = /usr/machine/etc/httpd
-
-BINDIR = $(PREFIX)/cgi-bin
+BINDIR = /usr/lib/cgi-bin
 
 SOURCES = mailto.c
 OBJECTS = mailto.o
 TARGETS = mailto
 
-INSTALL = bsdinst
-INSTALL_PROGRAM = $(INSTALL) -s -m 555
+CFLAGS = -O2 -Wall
+
+INSTALL = install
+INSTALL_PROGRAM = $(INSTALL) -g root -o root -m 755 -s
 
 all: $(TARGETS)
 
@@ -25,11 +25,7 @@ clean:
 	rm -f *.o core $(TARGETS)
 
 dist: clean
-	cd ..; 	tar cf - $(PROJECT)-$(VERSION) | gzip -9 >$(PROJECT)-$(VERSION).tar.gz
+	cd ..; tar cf - $(PROJECT)/* | gzip -9 >$(PROJECT)-$(VERSION).tar.gz
 
 check:
-	lint -u $(SOURCES)
 	gcc -Wall -fsyntax-only $(SOURCES)
-
-depend:
-	makedepend -- $(CFLAGS) $(COPTS) -- $(SOURCES)
