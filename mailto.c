@@ -187,7 +187,7 @@ char *stripcr(char *text)
 char *checkaccess(char *address)
 {
     FILE *f;
-    char line[256];
+    char line[1024];
     char *ptr;
 
     if (debug) fprintf(stderr, "checkaccess(\"%s\")\n", address);
@@ -210,7 +210,7 @@ char *checkaccess(char *address)
         }
         /* address not in file */
         fclose(f);
-        sprintf(line, BAD_ADDRESS, address, POSTMASTER, mailname);
+        snprintf(line, sizeof(line), BAD_ADDRESS, address, POSTMASTER, mailname);
         show_error(line);
         return NULL;
     } else {
@@ -559,6 +559,7 @@ int main(int argc, char *argv[])
         } else {
             /* generate an acknowledgement page */
             show_header(SUCCESS_HEADER, NULL);
+            printf("<p>");
             printf(SUCCESS_SENT, address);
             if (cc && bcc) {
                 printf(SUCCESS_ALSO, cc);
@@ -570,6 +571,7 @@ int main(int argc, char *argv[])
             } else {
                 printf(".\n");
             }
+            printf("</p>\n<p>\n");
             printf(SUCCESS_FROM, from);
             printf(SUCCESS_SENDER, SENDER, mailname);
             printf(SUCCESS_TO, address);
@@ -592,18 +594,19 @@ int main(int argc, char *argv[])
             if ((ptr = getenv("REMOTE_USER")) && *ptr) {
                 printf(SUCCESS_USER, ptr);
             }
+            printf("</p>\n");
             for (i=0; i < max; i++) {
                 if ((nptr = strchr(hval[i], '\n'))) {
                     /* multiline format */
-                    printf(SUCCESS_MULTI, htag[i]);
+                    printf(SUCCESS_MULTI_START, htag[i]);
                     ptr = hval[i];
                     do {
                         *nptr = '\0';
-                        printf(SUCCESS_LINE, secure(ptr));
+                        printf(SUCCESS_MULTI_LINE, secure(ptr));
                         ptr = nptr + 1;
                     } while ((nptr = strchr(ptr, '\n')));
                     /* final line */
-                    printf(SUCCESS_LINE, secure(ptr));
+                    printf(SUCCESS_MULTI_END, secure(ptr));
                 }
                 else {
                     /* single line format */
