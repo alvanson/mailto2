@@ -21,10 +21,20 @@
 ** 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-char header[]="mailto2 20170831\n"
-"(c) 1994-1999 by Andreas Ley <Andreas.Ley@rz.uni-karlsruhe.de>\n"
-"(c) 1998,2004 by Martin Schulze <joey@infodrom.org>\n"
-"(c) 2017 by Differentiated Analytics Inc. <info@differentiatedanalytics.ca>\n";
+#include "mailto_english.h"
+
+#include <netdb.h>
+#include <unistd.h>
+
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+/* File locations */
+
+#define ADDRESSES "/etc/mailto.conf"
+#define MAILCMD "/usr/lib/sendmail -bs >/dev/null"
 
 /* General definitions */
 
@@ -32,45 +42,27 @@ char header[]="mailto2 20170831\n"
 #define WEBMASTER "webmaster"
 #define SENDER "www"
 
-/* File locations */
-
-#define ADDRESSES "/etc/mailto.conf"
-#define MAILCMD "/usr/lib/sendmail -bs >/dev/null"
-
-#include <unistd.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <netdb.h>
-#include <string.h>
-#include <errno.h>
-#include <sys/param.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-/*
-#include "mailto_german.h"
-*/
-#include "mailto_english.h"
-
-#define	FALSE	0		/* This is the naked Truth */
-#define	TRUE	1		/* and this is the Light */
-
 /* Global variables */
 
 #define BUFSIZE 8192
 #define MAXFIELDS 1024
 
+char header[] = "mailto2 20170831\n"
+"(c) 1994-1999 by Andreas Ley <Andreas.Ley@rz.uni-karlsruhe.de>\n"
+"(c) 1998,2004 by Martin Schulze <joey@infodrom.org>\n"
+"(c) 2017 by Differentiated Analytics Inc. <info@differentiatedanalytics.ca>\n";
+
 char fqdn[256];
 char mailname[256];
 char *htag[MAXFIELDS], *hval[MAXFIELDS];
 size_t max;
-int	debug=0;
+int debug = 0;
 
 
 /* print header of an HTML response */
 void show_header(char *subtitle, char *description)
 {
-    if (debug)
-        fprintf(stderr, "show_header(\"%s\",\"%s\")\n", subtitle, description);
+    if (debug) fprintf(stderr, "show_header(\"%s\",\"%s\")\n", subtitle, description);
 
     printf("Content-type: text/html\n\n");
     printf("<!DOCTYPE html>\n");
@@ -93,8 +85,7 @@ void show_header(char *subtitle, char *description)
 /* print footer (trailer) of an HTML response */
 void show_trailer()
 {
-    if (debug)
-        fprintf(stderr, "show_trailer()\n");
+    if (debug) fprintf(stderr, "show_trailer()\n");
 
     printf("  </body>\n");
     printf("</html>\n");
@@ -104,8 +95,7 @@ void show_trailer()
 /* print an error page (wrong user input) */
 void show_error(char *error)
 {
-    if (debug)
-        fprintf(stderr, "show_error(\"%s\")\n", error);
+    if (debug) fprintf(stderr, "show_error(\"%s\")\n", error);
 
     show_header(ERROR, error);
     show_trailer();
@@ -116,8 +106,7 @@ void show_error(char *error)
 /* print an error page (internal malfunction) */
 void show_fatal(char *error)
 {
-    if (debug)
-        fprintf(stderr, "show_fatal(\"%s\")\n", error);
+    if (debug) fprintf(stderr, "show_fatal(\"%s\")\n", error);
 
     show_header(ERROR, error);
     printf("<p>");
@@ -131,22 +120,10 @@ void show_fatal(char *error)
 /* redirect to supplied location */
 void show_location(char *location)
 {
-    if (debug)
-        fprintf(stderr, "show_location(\"%s\")\n", location);
+    if (debug) fprintf(stderr, "show_location(\"%s\")\n", location);
 
     printf("Status: 302 Found\n");
     printf("Location: %s\n\n", location);
-}
-
-
-int tagindex(char **htag, int max, char *tagname)
-{
-	int	cnt;
-
-	if (debug)
-		(void)fprintf(stderr,"tagindex(%p,%08x,\"%s\")\n",htag,max,tagname);
-	for (cnt=0;cnt<max&&strcmp(htag[cnt],tagname);cnt++);
-	return(cnt);
 }
 
 
@@ -156,8 +133,7 @@ char *secure(char *text)
     char *src, *dest;
     size_t i;
 
-    if (debug)
-        fprintf(stderr, "secure(\"%s\")", text);
+    if (debug) fprintf(stderr, "secure(\"%s\")", text);
 
     if (text) {
         for (src=text, dest=text; *src; /* nop */) {
@@ -182,28 +158,28 @@ char *secure(char *text)
         *dest = '\0';
     }
 
-    if (debug)
-        fprintf(stderr, "=\"%s\"\n", text);
+    if (debug) fprintf(stderr, "=\"%s\"\n", text);
 
     return text;
 }
 
 
-
-/* Replaces <CR><LF> by <LF> only */
+/* replace <CR><LF> with <LF> only */
 char *stripcr(char *text)
 {
-	char	*src,*dest;
+    char *src, *dest;
 
-	if (debug)
-		(void)fprintf(stderr,"stripcr(\"%s\")\n",text);
-	if (text) {
-		for (src=text,dest=text;*src;src++)
-			if (src[0]!='\r'||src[1]!='\n')
-				*dest++=*src;
-		*dest='\0';
-	}
-	return(text);
+    if (debug) fprintf(stderr, "stripcr(\"%s\")\n", text);
+
+    if (text) {
+        for (src=text, dest=text; *src; src++) {
+            if (src[0] != '\r' || src[1] != '\n') {
+                *dest++ = *src;
+            }
+        }
+        *dest = '\0';
+    }
+    return text;
 }
 
 
@@ -214,8 +190,7 @@ char *checkaccess(char *address)
     char line[256];
     char *ptr;
 
-    if (debug)
-        fprintf(stderr, "checkaccess(\"%s\")\n", address);
+    if (debug) fprintf(stderr, "checkaccess(\"%s\")\n", address);
 
     if ((f = fopen(ADDRESSES, "r"))) {
         while (fgets(line, sizeof(line), f)) {
@@ -224,13 +199,11 @@ char *checkaccess(char *address)
                 if ((ptr = strchr(line, '\n'))) {
                     *ptr = '\0';
                 }
-                if (debug)
-                    fprintf(stderr, "checkaccess: \"%s\"\n", line);
+                if (debug) fprintf(stderr, "checkaccess: \"%s\"\n", line);
                 if (strcmp(address, line) == 0) {
                     /* address in file */
                     fclose(f);
-                    if (debug)
-                        fprintf(stderr,"checkaccess: valid \"%s\"\n",line);
+                    if (debug) fprintf(stderr, "checkaccess: valid \"%s\"\n", line);
                     return address;
                 }
             }
@@ -256,8 +229,7 @@ void mailto(char *address, char *cc, char *bcc, char *subject, char *from)
     int retval;
     char error[BUFSIZE];
 
-    if (debug)
-        fprintf(stderr, "mailto(\"%s\",\"%s\",\"%s\",\"%s\",\"%s\")\n", address, cc, bcc, subject, from);
+    if (debug) fprintf(stderr, "mailto(\"%s\",\"%s\",\"%s\",\"%s\",\"%s\")\n", address, cc, bcc, subject, from);
 
     if ((p = popen(MAILCMD, "w"))) {
         fprintf(p, "HELO %s\r\n", fqdn);
@@ -349,8 +321,8 @@ void mailto(char *address, char *cc, char *bcc, char *subject, char *from)
 
 void usage(char *image)
 {
-	(void)fprintf(stderr,"Usage: %s [-h] [-v]\n",image);
-	exit(1);
+    fprintf(stderr, "Usage: %s [-h] [-v]\n", image);
+    exit(1);
 }
 
 
@@ -476,60 +448,59 @@ void urldecode(char *url) {
 
 int main(int argc, char *argv[])
 {
-	int	c;
-	char	*ptr,*nptr;
-	char	*address,*from,*cc,*bcc,*subject,*location;
-	char	*tag,*val;
+    int c;
+    char *address, *from, *cc, *bcc, *subject, *location;
+    char *ptr, *nptr;
+    char *tag, *val;
     size_t cl, i;
     char *saveptr;
 
-	while ((c=getopt(argc,argv,"Dvh?")) != EOF)
-		switch ((char)c) {
-		case 'D':
-			debug++;
-			break;
-		case 'v':
-			(void)fprintf(stderr,header);
-			exit(0);
-		case 'h':
-			(void)fprintf(stderr,header);
-		case '?':
-			usage(argv[0]);
-		}
+    while ((c = getopt(argc, argv, "Dvh?")) != EOF) {
+        switch ((char)c) {
+            case 'D':
+                debug++;
+                break;
+            case 'v':
+                fprintf(stderr, header);
+                exit(0);
+                break;
+            case 'h':
+                fprintf(stderr, header);
+                /* fall through */
+            case '?':
+                usage(argv[0]);
+                break;
+        }
+    }
 
-	address=NULL;
-	subject=NULL;
-	location=NULL;
-	from="not-for-mail";
-	cc=NULL;
-	bcc=NULL;
+    address = NULL;
+    subject = NULL;
+    location = NULL;
+    from = SENDER;
+    cc = NULL;
+    bcc = NULL;
 
     getfqdn(fqdn, sizeof(fqdn));
-    if (debug)
-        fprintf(stderr, "fqdn=\"%s\"\n", fqdn);
+    if (debug) fprintf(stderr, "fqdn=\"%s\"\n", fqdn);
 
     getmailname(mailname, sizeof(mailname), fqdn);
-    if (debug)
-        fprintf(stderr, "mailname=\"%s\"\n", mailname);
+    if (debug) fprintf(stderr, "mailname=\"%s\"\n", mailname);
 
     /* extract recipient address from URL */
     ptr = getenv("PATH_INFO");
-    if (debug)
-        fprintf(stderr, "PATH_INFO=\"%s\"\n", ptr);
+    if (debug) fprintf(stderr, "PATH_INFO=\"%s\"\n", ptr);
     if (ptr) {
         /* skip leading slash */
         if (*ptr == '/') {
             ptr++;
         }
         address = secure(ptr);
-        if (debug)
-            fprintf(stderr, "address=\"%s\"\n", address);
+        if (debug) fprintf(stderr, "address=\"%s\"\n", address);
     }
 
     /* only accept POST requests */
     ptr = getenv("REQUEST_METHOD");
-    if (debug)
-        fprintf(stderr, "REQUEST_METHOD=\"%s\"\n", ptr);
+    if (debug) fprintf(stderr, "REQUEST_METHOD=\"%s\"\n", ptr);
     if (!ptr || strcmp(ptr, "POST") != 0) {
         show_fatal(ERROR_REQUEST_METHOD);
     } else {
@@ -550,8 +521,7 @@ int main(int argc, char *argv[])
                         address = secure(val);
                     } else if (strcmp(tag, "Subject") == 0) {
                         subject = secure(val);
-                        if (debug)
-                            fprintf(stderr, "subject=\"%s\"\n", subject);
+                        if (debug) fprintf(stderr, "subject=\"%s\"\n", subject);
                     } else if (strcmp(tag, "From") == 0) {
                         from = secure(val);
                     } else if (strcmp(tag, "Cc") == 0) {
@@ -644,5 +614,5 @@ int main(int argc, char *argv[])
         }
     }
 
-	return(0);
+    return 0;
 }
