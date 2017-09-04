@@ -1,8 +1,8 @@
 Changelog
 =========
 
-[Unreleased]
-------------
+2.0.0 (2017-09-04)
+------------------
 * mailto now verifies all outgoing addresses against /etc/mailto.conf.
 * mailto no longer supports extra data (realnames) in /etc/mailto.conf.
 * Removed template mail form; only POST requests are accepted.

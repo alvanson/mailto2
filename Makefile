@@ -1,5 +1,5 @@
 PROJECT = mailto2
-VERSION = 20170831
+VERSION = 2.0.0
 
 BINDIR = /usr/lib/cgi-bin
 

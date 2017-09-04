@@ -47,7 +47,7 @@
 #define BUFSIZE 8192
 #define MAXFIELDS 1024
 
-char header[] = "mailto2 20170831\n"
+char header[] = "mailto2 2.0.0\n"
 "(c) 1994-1999 by Andreas Ley <Andreas.Ley@rz.uni-karlsruhe.de>\n"
 "(c) 1998,2004 by Martin Schulze <joey@infodrom.org>\n"
 "(c) 2017 by Differentiated Analytics Inc. <info@differentiatedanalytics.ca>\n";
